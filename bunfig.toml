@@ -1,0 +1,17 @@
+[install]
+# Configure bun install behavior
+cache = true
+exact = false
+production = false
+optional = true
+
+[install.scopes]
+# Configure scoped packages if needed
+
+[run]
+# Configure bun run behavior
+shell = "system"
+
+[test]
+# Configure bun test if you use it
+root = "./tests"
