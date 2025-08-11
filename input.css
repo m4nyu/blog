@@ -1,0 +1,405 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(0 0% 3.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 3.9%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(0 0% 3.9%);
+  --color-primary: hsl(0 0% 9%);
+  --color-primary-foreground: hsl(0 0% 98%);
+  --color-secondary: hsl(0 0% 96.1%);
+  --color-secondary-foreground: hsl(0 0% 9%);
+  --color-muted: hsl(0 0% 96.1%);
+  --color-muted-foreground: hsl(0 0% 45.1%);
+  --color-accent: hsl(0 0% 96.1%);
+  --color-accent-foreground: hsl(0 0% 9%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-border: hsl(0 0% 89.8%);
+  --color-input: hsl(0 0% 89.8%);
+  --color-ring: hsl(0 0% 3.9%);
+  --radius: 0;
+  --font-family-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+@layer base {
+  .dark {
+    --color-background: hsl(0 0% 3.9%);
+    --color-foreground: hsl(0 0% 98%);
+    --color-card: hsl(0 0% 3.9%);
+    --color-card-foreground: hsl(0 0% 98%);
+    --color-popover: hsl(0 0% 3.9%);
+    --color-popover-foreground: hsl(0 0% 98%);
+    --color-primary: hsl(0 0% 98%);
+    --color-primary-foreground: hsl(0 0% 9%);
+    --color-secondary: hsl(0 0% 14.9%);
+    --color-secondary-foreground: hsl(0 0% 98%);
+    --color-muted: hsl(0 0% 14.9%);
+    --color-muted-foreground: hsl(0 0% 63.9%);
+    --color-accent: hsl(0 0% 14.9%);
+    --color-accent-foreground: hsl(0 0% 98%);
+    --color-destructive: hsl(0 62.8% 30.6%);
+    --color-destructive-foreground: hsl(0 0% 98%);
+    --color-border: hsl(0 0% 14.9%);
+    --color-input: hsl(0 0% 14.9%);
+    --color-ring: hsl(0 0% 83.1%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply text-foreground font-sans;
+  }
+
+  /* Text selection styles */
+  ::selection {
+    @apply bg-primary text-primary-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+}
+
+/* Conway's Game of Life Background - Only visible in dark mode */
+.dark .conway-background {
+  background-image: 
+    /* Static still lifes - blocks */
+    radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 11% 15%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 10% 16%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 11% 16%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px),
+    /* Beehive pattern */
+    radial-gradient(circle at 40% 60%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 41% 60%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 39% 61%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 42% 61%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 40% 62%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 41% 62%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px),
+    /* Scattered cells */
+    radial-gradient(circle at 60% 40%, color-mix(in srgb, var(--color-primary) 20%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 15% 80%, color-mix(in srgb, var(--color-primary) 20%, transparent) 1px, transparent 1px);
+  background-size: 
+    20px 20px, 20px 20px, 20px 20px, 20px 20px,
+    25px 25px, 25px 25px, 25px 25px, 25px 25px, 25px 25px, 25px 25px,
+    30px 30px, 35px 35px, 28px 28px;
+}
+
+/* Light mode: completely invisible background */
+.conway-background {
+  background: none;
+}
+
+/* Ensure backdrop blur works properly */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Custom slider styling - compact and visible */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #404040;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Track styling for light mode */
+input[type="range"]::-webkit-slider-track {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #404040;
+  border-radius: 2px;
+  border: none;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #404040;
+  border-radius: 2px;
+  border: none;
+}
+
+/* Thumb styling - smaller and more refined */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #404040;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease-in-out;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #505050;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #404040;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease-in-out;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #505050;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Dark mode overrides */
+.dark input[type="range"] {
+  background: #606060;
+}
+
+.dark input[type="range"]::-webkit-slider-track {
+  background: #606060;
+}
+
+.dark input[type="range"]::-moz-range-track {
+  background: #606060;
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background: #606060;
+  border: none;
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  background: #606060;
+  border: none;
+}
+
+/* Markdown prose styles with responsive headings */
+.prose h1 {
+    @apply text-foreground text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mt-6 sm:mt-8 md:mt-10 mb-4 sm:mb-6 md:mb-8 leading-tight;
+    border-bottom: 2px solid hsl(var(--color-primary));
+    padding-bottom: 0.5rem;
+}
+
+.prose h2 {
+    @apply text-foreground text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mt-5 sm:mt-6 md:mt-8 mb-3 sm:mb-4 md:mb-6 leading-tight;
+    border-bottom: 1px solid hsl(var(--color-muted-foreground) / 0.3);
+    padding-bottom: 0.3rem;
+}
+
+.prose h3 {
+    @apply text-foreground text-base sm:text-lg md:text-xl lg:text-2xl font-semibold mt-4 sm:mt-5 md:mt-6 mb-2 sm:mb-3 md:mb-4 leading-tight;
+}
+
+.prose h4 {
+    @apply text-foreground text-sm sm:text-base md:text-lg lg:text-xl font-semibold mt-3 sm:mt-4 md:mt-5 mb-2 sm:mb-2.5 md:mb-3 leading-tight;
+}
+
+.prose h5, .prose h6 {
+    @apply text-foreground text-xs sm:text-sm md:text-base lg:text-lg font-medium mt-3 sm:mt-3.5 md:mt-4 mb-1.5 sm:mb-2 md:mb-2;
+}
+
+/* Paragraphs with better spacing */
+.prose p {
+    @apply text-foreground mb-6 leading-relaxed;
+}
+
+/* Links */
+.prose a {
+    @apply text-primary hover:text-primary/80 underline decoration-2 underline-offset-2 transition-colors;
+}
+
+/* Lists */
+.prose ul, .prose ol {
+    @apply mb-6 pl-6;
+}
+
+.prose li {
+    @apply mb-2 leading-relaxed;
+}
+
+.prose ul > li {
+    @apply list-disc;
+}
+
+.prose ol > li {
+    @apply list-decimal;
+}
+
+/* Inline code - no rounding */
+.prose code {
+    @apply bg-muted text-foreground px-2 py-1 text-sm font-mono;
+    border: 1px solid hsl(var(--color-border));
+}
+
+/* Code blocks - no rounding, rich styling - responsive */
+.prose pre {
+    @apply bg-muted border-2 border-border p-3 sm:p-4 md:p-6 overflow-x-auto my-6 sm:my-7 md:my-8 relative;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.75rem !important;
+    line-height: 1.4;
+}
+
+@media (min-width: 640px) {
+    .prose pre {
+        font-size: 0.8rem !important;
+        line-height: 1.45;
+    }
+}
+
+@media (min-width: 768px) {
+    .prose pre {
+        font-size: 0.85rem !important;
+        line-height: 1.5;
+    }
+}
+
+.prose pre code {
+    @apply bg-transparent p-0 border-0 text-foreground;
+    font-size: 0.75rem !important;
+}
+
+@media (min-width: 640px) {
+    .prose pre code {
+        font-size: 0.8rem !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .prose pre code {
+        font-size: 0.85rem !important;
+    }
+}
+
+/* Override Prism.js styles with higher specificity */
+.prose pre[class*="language-"] {
+    font-size: 0.75rem !important;
+}
+
+.prose pre[class*="language-"] code {
+    font-size: 0.75rem !important;
+}
+
+.prose code[class*="language-"] {
+    font-size: 0.75rem !important;
+}
+
+@media (min-width: 640px) {
+    .prose pre[class*="language-"] {
+        font-size: 0.8rem !important;
+    }
+    
+    .prose pre[class*="language-"] code {
+        font-size: 0.8rem !important;
+    }
+    
+    .prose code[class*="language-"] {
+        font-size: 0.8rem !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .prose pre[class*="language-"] {
+        font-size: 0.85rem !important;
+    }
+    
+    .prose pre[class*="language-"] code {
+        font-size: 0.85rem !important;
+    }
+    
+    .prose code[class*="language-"] {
+        font-size: 0.85rem !important;
+    }
+}
+
+/* Code block enhancements */
+.code-block-container {
+    @apply relative my-8;
+}
+
+.code-btn {
+    @apply bg-background/80 backdrop-blur-sm border border-border text-foreground;
+    @apply px-1 sm:px-1.5 py-0.5 sm:py-1 text-xs hover:bg-muted transition-all;
+    @apply flex items-center justify-center w-6 sm:w-7 h-6 sm:h-7;
+    @apply cursor-pointer hover:cursor-pointer active:cursor-pointer;
+}
+
+.code-btn:hover {
+    @apply cursor-pointer;
+}
+
+.code-btn:active {
+    @apply scale-95;
+}
+
+.code-output {
+    @apply text-sm border-t border-border mt-4 pt-4;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Blockquotes - rich styling */
+.prose blockquote {
+    @apply border-l-4 border-primary bg-muted/30 pl-6 pr-4 py-4 my-8 italic;
+    font-size: 1.1rem;
+}
+
+.prose blockquote p {
+    @apply mb-0;
+}
+
+/* Tables */
+.prose table {
+    @apply w-full border-2 border-border my-8;
+}
+
+.prose th {
+    @apply bg-muted border border-border px-4 py-3 text-left font-semibold;
+}
+
+.prose td {
+    @apply border border-border px-4 py-3;
+}
+
+/* Images */
+.prose img {
+    @apply w-full border-2 border-border my-8;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Horizontal rules */
+.prose hr {
+    @apply border-0 border-t-2 border-border my-12;
+}
+
