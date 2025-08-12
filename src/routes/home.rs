@@ -53,7 +53,7 @@ pub fn HomePage() -> impl IntoView {
             <Life animation_speed=animation_speed population_density=population_density />
             
             <div class="relative min-h-screen">
-                <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">
+                <div class="relative z-10 max-w-5xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-6 md:pt-8 pb-6 sm:pb-12 md:pb-16">
                 <main>
                     <Suspense fallback=move || view! { <div></div> }>
                         {move || {
@@ -75,7 +75,7 @@ pub fn HomePage() -> impl IntoView {
                                                 }
                                             } else {
                                                 view! {
-                                                    <div class="space-y-6 sm:space-y-8">
+                                                    <div class="space-y-2 sm:space-y-3 md:space-y-4">
                                                         {filtered_posts.into_iter()
                                                             .map(|post| {
                                                                 let post_url = format!("/post/{}", post.slug);
@@ -88,14 +88,14 @@ pub fn HomePage() -> impl IntoView {
                                                                         href=post_url
                                                                         class="block w-full"
                                                                     >
-                                                                        <Card class="w-full h-32 sm:h-36 md:h-40 flex flex-col hover:bg-accent hover:border-ring hover:border-2 transition-all cursor-pointer group relative">
-                                                                            <CardHeader class="flex-shrink-0 p-3 sm:p-4 md:p-5 pb-1 sm:pb-2 md:pb-2">
-                                                                                <CardTitle class="text-card-foreground truncate mb-1 sm:mb-2 text-lg sm:text-xl md:text-2xl font-bold">
+                                                                        <Card class="w-full h-20 sm:h-24 md:h-28 flex flex-col hover:bg-accent hover:border-ring focus-within:border-ring border-2 border-border transition-colors cursor-pointer group">
+                                                                            <CardHeader class="flex-shrink-0 !p-2 sm:!p-3 md:!p-4 !pb-1 sm:!pb-1 md:!pb-2">
+                                                                                <CardTitle class="text-card-foreground truncate !mb-0 sm:!mb-1 !text-sm sm:!text-base md:!text-xl font-bold">
                                                                                     {title.clone()}
                                                                                 </CardTitle>
                                                                             </CardHeader>
-                                                                            <CardContent class="flex-1 flex flex-col justify-between pt-0 px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
-                                                                                <p class="text-muted-foreground line-clamp-2 text-sm sm:text-base md:text-lg mb-2 sm:mb-3">
+                                                                            <CardContent class="flex-1 flex flex-col !pt-0 !px-2 sm:!px-3 md:!px-4 !pb-2 sm:!pb-3 md:!pb-4">
+                                                                                <p class="text-muted-foreground truncate text-xs sm:text-sm md:text-base">
                                                                                     {excerpt.clone()}
                                                                                 </p>
                                                                                 <div class="flex items-end justify-between">

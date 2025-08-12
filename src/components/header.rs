@@ -114,7 +114,7 @@ pub fn Header(
                     
                     // Focus the search input
                     if let Some(document) = web_sys::window().and_then(|w| w.document()) {
-                        if let Ok(Some(search_input)) = document.query_selector("input[placeholder='Search posts']") {
+                        if let Ok(Some(search_input)) = document.query_selector("input[placeholder='Search (⌘K)']") {
                             if let Ok(input_element) = search_input.dyn_into::<web_sys::HtmlInputElement>() {
                                 let _ = input_element.focus();
                             }
@@ -137,19 +137,19 @@ pub fn Header(
                 "top-0"    // Visible at top
             }
         )>
-            <div class="max-w-7xl mx-auto px-4 py-1.5 flex items-center justify-between">
-                // Left spacer
-                <div class="w-20"></div>
+            <div class="max-w-7xl mx-auto px-2 sm:px-4 py-1 sm:py-1.5 flex items-center justify-between gap-1 sm:gap-2">
+                // Left spacer - hidden on mobile
+                <div class="hidden sm:block w-20"></div>
                 
                 // Center - Search field with inline suggestions
-                <div class="flex-1 max-w-md mx-auto">
+                <div class="flex-1 max-w-full sm:max-w-md mx-0 sm:mx-auto">
                     <div class="relative">
-                        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 sm:w-4 h-3 sm:h-4 text-muted-foreground z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                         
                         // Suggestion text overlay (appears behind the input)
-                        <div class="absolute inset-0 pl-10 pr-4 py-1.5 text-sm pointer-events-none flex items-center">
+                        <div class="absolute inset-0 pl-7 sm:pl-10 pr-2 sm:pr-4 py-1 sm:py-1.5 text-xs sm:text-sm pointer-events-none flex items-center">
                             <span class="text-muted-foreground/50">
                                 {move || {
                                     let query = search_query.get();
@@ -177,20 +177,20 @@ pub fn Header(
                         // Main input field (appears over the suggestion)
                         <input
                             type="text"
-                            placeholder="Search posts (⌘K)"
-                            class="relative w-full pl-10 pr-4 py-1.5 text-sm bg-transparent border border-border focus:outline-none focus:ring-0 focus:border-ring focus:border-2 text-foreground placeholder:text-muted-foreground transition-all z-10"
+                            placeholder="Search (⌘K)"
+                            class="relative w-full pl-7 sm:pl-10 pr-2 sm:pr-4 py-1 sm:py-1.5 text-xs sm:text-sm bg-transparent border-2 border-border focus:outline-none focus:ring-0 focus:border-ring text-foreground placeholder:text-muted-foreground transition-colors z-10"
                             on:input=handle_search_input
                             on:keydown=handle_search_keydown
                             prop:value=move || search_query.get()
                         />
                         
-                        // Helper text for keyboard shortcuts
+                        // Helper text for keyboard shortcuts - hidden on mobile
                         {move || {
                             let query = search_query.get();
                             let suggestion = current_suggestion.get();
                             if !query.is_empty() && !suggestion.is_empty() && suggestion != query && suggestion.to_lowercase().starts_with(&query.to_lowercase()) {
                                 view! {
-                                    <div class="absolute -bottom-5 left-0 text-xs text-muted-foreground">
+                                    <div class="hidden sm:block absolute -bottom-5 left-0 text-xs text-muted-foreground">
                                         "Press Tab or → to accept"
                                     </div>
                                 }.into_view()
@@ -202,15 +202,15 @@ pub fn Header(
                 </div>
                 
                 // Right - Settings button
-                <div class="relative w-20 flex justify-end">
+                <div class="relative flex-shrink-0">
                     <button
-                        class="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-colors cursor-pointer"
+                        class="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-colors cursor-pointer"
                         on:click=move |_| {
                             let current = show_settings.get_untracked();
                             show_settings.set(!current);
                         }
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 sm:w-5 h-4 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
