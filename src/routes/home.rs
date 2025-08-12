@@ -2,14 +2,16 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::models::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
-use crate::models::components::life::Life;
-use crate::models::post::BlogPost;
+use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
+use crate::components::ui::life::Life;
+use crate::components::post::card_metrics::PostCardMetrics;
+use crate::components::post::card_share_button::CardShareButton;
+use crate::components::post::BlogPost;
 #[cfg(feature = "ssr")]
-use crate::models::post::get_all_posts;
+use crate::components::post::get_all_posts;
 
 #[server(GetPosts, "/api")]
-pub async fn get_posts() -> Result<Vec<crate::models::post::BlogPost>, ServerFnError> {
+pub async fn get_posts() -> Result<Vec<crate::components::post::BlogPost>, ServerFnError> {
     eprintln!("Server function get_posts called");
     let result = get_all_posts().await;
     match &result {
@@ -31,7 +33,7 @@ pub fn HomePage() -> impl IntoView {
     let search_query = use_context::<RwSignal<String>>().unwrap_or_else(|| RwSignal::new(String::new()));
 
     // Function to filter posts based on search query
-    let filter_posts = move |posts: Vec<crate::models::post::BlogPost>| {
+    let filter_posts = move |posts: Vec<crate::components::post::BlogPost>| {
         let query = search_query.get().trim().to_lowercase();
         if query.is_empty() {
             posts
@@ -77,21 +79,35 @@ pub fn HomePage() -> impl IntoView {
                                                         {filtered_posts.into_iter()
                                                             .map(|post| {
                                                                 let post_url = format!("/post/{}", post.slug);
+                                                                let title = post.title.clone();
+                                                                let excerpt = post.excerpt.clone();
+                                                                let slug_for_share = post.slug.clone();
+                                                                
                                                                 view! {
                                                                     <A
                                                                         href=post_url
                                                                         class="block w-full"
                                                                     >
-                                                                        <Card class="w-full h-24 sm:h-28 md:h-32 flex flex-col hover:bg-accent transition-colors cursor-pointer group">
+                                                                        <Card class="w-full h-32 sm:h-36 md:h-40 flex flex-col hover:bg-accent hover:border-ring hover:border-2 transition-all cursor-pointer group relative">
                                                                             <CardHeader class="flex-shrink-0 p-3 sm:p-4 md:p-5 pb-1 sm:pb-2 md:pb-2">
                                                                                 <CardTitle class="text-card-foreground truncate mb-1 sm:mb-2 text-lg sm:text-xl md:text-2xl font-bold">
-                                                                                    {&post.title}
+                                                                                    {title.clone()}
                                                                                 </CardTitle>
                                                                             </CardHeader>
-                                                                            <CardContent class="flex-1 flex flex-col pt-0 px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
-                                                                                <p class="text-muted-foreground truncate text-sm sm:text-base md:text-lg">
-                                                                                    {&post.excerpt}
+                                                                            <CardContent class="flex-1 flex flex-col justify-between pt-0 px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
+                                                                                <p class="text-muted-foreground line-clamp-2 text-sm sm:text-base md:text-lg mb-2 sm:mb-3">
+                                                                                    {excerpt.clone()}
                                                                                 </p>
+                                                                                <div class="flex items-end justify-between">
+                                                                                    <PostCardMetrics 
+                                                                                        views=post.metrics.views
+                                                                                        likes=post.metrics.likes
+                                                                                        dislikes=post.metrics.dislikes
+                                                                                    />
+                                                                                    <CardShareButton 
+                                                                                        slug=slug_for_share
+                                                                                    />
+                                                                                </div>
                                                                             </CardContent>
                                                                         </Card>
                                                                     </A>

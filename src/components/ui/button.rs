@@ -34,6 +34,7 @@ pub fn Button(
     #[prop(optional)] variant: Option<ButtonVariant>,
     #[prop(optional)] class: Option<&'static str>,
     #[prop(optional)] onclick: Option<Box<dyn Fn() + 'static>>,
+    #[prop(optional)] onclick_with_event: Option<Box<dyn Fn(ev::MouseEvent) + 'static>>,
     #[prop(optional)] href: Option<String>,
     children: Children,
 ) -> impl IntoView {
@@ -56,8 +57,10 @@ pub fn Button(
         view! {
             <button
                 class=class
-                on:click=move |_| {
-                    if let Some(ref onclick) = onclick {
+                on:click=move |ev| {
+                    if let Some(ref onclick_with_event) = onclick_with_event {
+                        onclick_with_event(ev);
+                    } else if let Some(ref onclick) = onclick {
                         onclick();
                     }
                 }
