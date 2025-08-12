@@ -30,7 +30,7 @@ gloo-utils = { version = "0.1", optional = true }
 console_error_panic_hook = { version = "0.1.7", optional = true }
 wasm-bindgen = { version = "0.2.93", optional = true }
 gloo-timers = { version = "0.3", features = ["futures"], optional = true }
-web-sys = { version = "0.3", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Window", "MouseEvent", "Element", "DomRect", "Storage", "MediaQueryList", "console"], optional = true }
+web-sys = { version = "0.3", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Window", "MouseEvent", "Element", "DomRect", "Storage", "MediaQueryList", "console", "Navigator", "ShareData", "Clipboard", "Location"], optional = true }
 js-sys = { version = "0.3", optional = true }
 
 # dependencies for server (enable when ssr set)

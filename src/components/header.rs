@@ -5,7 +5,7 @@ use wasm_bindgen::{JsCast, closure::Closure};
 #[cfg(feature = "hydrate")]
 use web_sys::{Event, HtmlInputElement, KeyboardEvent};
 
-use crate::models::post::BlogPost;
+use crate::components::post::BlogPost;
 
 #[component]
 pub fn Header(

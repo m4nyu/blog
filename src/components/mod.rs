@@ -1,4 +1,3 @@
-pub mod code;
 pub mod header;
-pub mod life;
+pub mod post;
 pub mod ui;

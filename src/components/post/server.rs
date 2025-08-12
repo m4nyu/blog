@@ -1,28 +1,13 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct BlogPost {
-    pub slug: String,
-    pub title: String,
-    pub date: DateTime<Utc>,
-    pub excerpt: String,
-    pub content: String,
-    pub tags: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PostMeta {
-    pub title: String,
-    pub date: DateTime<Utc>,
-    pub excerpt: String,
-    pub tags: Vec<String>,
-}
+#[cfg(feature = "ssr")]
+use std::sync::Mutex;
+#[cfg(feature = "ssr")]
+use std::collections::HashMap;
 
 #[cfg(feature = "ssr")]
-pub async fn get_all_posts() -> Result<Vec<BlogPost>, std::io::Error> {
+pub async fn get_all_posts() -> Result<Vec<super::types::BlogPost>, std::io::Error> {
     use std::path::Path;
     use tokio::fs;
+    use super::types::BlogPost;
 
     let posts_dir = Path::new("content/posts");
     let mut posts = Vec::new();
@@ -49,9 +34,10 @@ pub async fn get_all_posts() -> Result<Vec<BlogPost>, std::io::Error> {
 }
 
 #[cfg(feature = "ssr")]
-pub async fn get_post_by_slug(slug: &str) -> Result<Option<BlogPost>, std::io::Error> {
+pub async fn get_post_by_slug(slug: &str) -> Result<Option<super::types::BlogPost>, std::io::Error> {
     use std::path::Path;
     use tokio::fs;
+    use super::types::BlogPost;
 
     let post_path = Path::new("content/posts").join(format!("{}.md", slug));
 
@@ -64,9 +50,11 @@ pub async fn get_post_by_slug(slug: &str) -> Result<Option<BlogPost>, std::io::E
 }
 
 #[cfg(feature = "ssr")]
-fn parse_post(content: &str, path: &std::path::Path) -> Option<BlogPost> {
+fn parse_post(content: &str, path: &std::path::Path) -> Option<super::types::BlogPost> {
     use gray_matter::engine::YAML;
     use gray_matter::Matter;
+    use chrono::{DateTime, Utc};
+    use super::types::BlogPost;
 
     let matter = Matter::<YAML>::new();
     let result = matter.parse(content);
@@ -96,11 +84,43 @@ fn parse_post(content: &str, path: &std::path::Path) -> Option<BlogPost> {
     let slug = path.file_stem()?.to_str()?.to_string();
 
     Some(BlogPost {
-        slug,
+        slug: slug.clone(),
         title,
         date,
         excerpt,
         content: result.content,
         tags,
+        metrics: get_post_metrics(&slug),
     })
+}
+
+#[cfg(feature = "ssr")]
+static METRICS_STORE: std::sync::LazyLock<Mutex<HashMap<String, super::types::PostMetrics>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+#[cfg(feature = "ssr")]
+pub fn get_post_metrics(slug: &str) -> super::types::PostMetrics {
+    use super::types::PostMetrics;
+    let store = METRICS_STORE.lock().unwrap();
+    store.get(slug).cloned().unwrap_or_default()
+}
+
+#[cfg(feature = "ssr")]
+pub fn increment_view(slug: &str) {
+    use super::types::PostMetrics;
+    let mut store = METRICS_STORE.lock().unwrap();
+    let metrics = store.entry(slug.to_string()).or_default();
+    metrics.views += 1;
+}
+
+#[cfg(feature = "ssr")]
+pub fn update_vote(slug: &str, is_like: bool) {
+    use super::types::PostMetrics;
+    let mut store = METRICS_STORE.lock().unwrap();
+    let metrics = store.entry(slug.to_string()).or_default();
+    if is_like {
+        metrics.likes += 1;
+    } else {
+        metrics.dislikes += 1;
+    }
 }
