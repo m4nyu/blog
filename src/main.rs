@@ -19,6 +19,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
             .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
+            .service(Files::new("/assets/", "posts/").show_files_listing())
             .service(Files::new("/", site_root))
             .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "no-cache")))
             .wrap(middleware::Compress::default())

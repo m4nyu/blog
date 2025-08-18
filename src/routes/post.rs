@@ -80,7 +80,7 @@ pub fn PostPage() -> impl IntoView {
                                         />
 
                                         // Post content
-                                        <Markdown content=post.content/>
+                                        <Markdown content=post.content base_path=format!("{}.md", post.slug)/>
                                         
                                         // Post interactions (sharing)
                                         <PostInteractions 
