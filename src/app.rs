@@ -5,8 +5,8 @@ use leptos_router::*;
 #[cfg(feature = "hydrate")]
 use web_sys;
 
-use crate::models::components::header::Header;
-use crate::models::components::ui::dialog::Dialog;
+use crate::components::header::Header;
+use crate::components::ui::dialog::Dialog;
 use crate::routes::home::HomePage;
 use crate::routes::post::PostPage;
 use crate::routes::home::get_posts;

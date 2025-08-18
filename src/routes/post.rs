@@ -2,15 +2,18 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::models::markdown::Markdown;
-use crate::models::components::ui::badge::{Badge, BadgeVariant, BadgeSize};
+use crate::components::post::{
+    markdown::Markdown,
+    header::PostHeader, 
+    PostInteractions,
+};
 #[cfg(feature = "ssr")]
-use crate::models::post::get_post_by_slug;
+use crate::components::post::{get_post_by_slug, increment_view, update_vote};
 
 #[server(GetPost, "/api")]
 pub async fn get_post(
     slug: String,
-) -> Result<Option<crate::models::post::BlogPost>, ServerFnError> {
+) -> Result<Option<crate::components::post::BlogPost>, ServerFnError> {
     eprintln!("Server function get_post called with slug: {}", slug);
     let result = get_post_by_slug(&slug).await;
     match &result {
@@ -19,6 +22,18 @@ pub async fn get_post(
         Err(e) => eprintln!("Error loading post: {}", e),
     }
     result.map_err(|e| ServerFnError::ServerError(e.to_string()))
+}
+
+#[server(TrackView, "/api")]
+pub async fn track_view(slug: String) -> Result<(), ServerFnError> {
+    increment_view(&slug);
+    Ok(())
+}
+
+#[server(SubmitVote, "/api")]
+pub async fn submit_vote(slug: String, is_like: bool) -> Result<(), ServerFnError> {
+    update_vote(&slug, is_like);
+    Ok(())
 }
 
 #[component]
@@ -49,38 +64,28 @@ pub fn PostPage() -> impl IntoView {
                                         <Title text=post.title.clone()/>
                                         <Meta name="description" content=post.excerpt.clone()/>
 
-                                        // Just back button and markdown content - responsive
+                                        // Back button
                                         <A href="/" class="text-sm sm:text-base md:text-lg text-primary hover:text-primary/80 mb-6 sm:mb-7 md:mb-8 inline-block">
                                             "← Back to posts"
                                         </A>
 
-                                        // Frontmatter display - responsive
-                                        <div class="mb-8 sm:mb-10 md:mb-12 pb-6 sm:pb-7 md:pb-8 border-b-2 border-border">
-                                            <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-3.5 md:mb-4 text-foreground leading-tight">{post.title.clone()}</h1>
-                                            
-                                            <div class="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-3.5 md:mb-4 text-xs sm:text-sm text-muted-foreground">
-                                                <div class="flex items-center gap-1.5 sm:gap-2">
-                                                    <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                    </svg>
-                                                    <span>{post.date.format("%B %d, %Y").to_string()}</span>
-                                                </div>
-                                            </div>
-                                            
-                                            <p class="text-base sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-5 md:mb-6 leading-relaxed italic">{post.excerpt.clone()}</p>
-                                            
-                                            <div class="flex flex-wrap gap-1.5 sm:gap-2">
-                                                {post.tags.clone().into_iter().map(|tag| {
-                                                    view! {
-                                                        <Badge variant=BadgeVariant::Primary size=BadgeSize::Medium>
-                                                            {"#"}{tag}
-                                                        </Badge>
-                                                    }
-                                                }).collect::<Vec<_>>()}
-                                            </div>
-                                        </div>
+                                        // Post header with metadata and metrics
+                                        <PostHeader 
+                                            slug=post.slug.clone()
+                                            title=post.title.clone()
+                                            date=post.date
+                                            excerpt=post.excerpt.clone()
+                                            tags=post.tags.clone()
+                                            initial_views=post.metrics.views
+                                        />
 
+                                        // Post content
                                         <Markdown content=post.content/>
+                                        
+                                        // Post interactions (sharing)
+                                        <PostInteractions 
+                                            slug=post.slug.clone()
+                                        />
                                     </article>
                                 }.into_view()
                             }

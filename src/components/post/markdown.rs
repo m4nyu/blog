@@ -1,6 +1,6 @@
 use leptos::*;
 use pulldown_cmark::{html, CowStr, Event, Options, Parser, Tag, CodeBlockKind};
-use crate::models::components::code::CodeRunner;
+use super::code::CodeRunner;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MarkdownElement {
