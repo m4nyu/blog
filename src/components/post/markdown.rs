@@ -2,6 +2,22 @@ use leptos::*;
 use pulldown_cmark::{html, CowStr, Event, Options, Parser, Tag, CodeBlockKind};
 use super::code::CodeRunner;
 
+fn resolve_asset_url(url: &str, base_path: Option<&str>) -> String {
+    // If URL is already absolute (starts with http, https, or /), return as-is
+    if url.starts_with("http://") || url.starts_with("https://") || url.starts_with("/") {
+        return url.to_string();
+    }
+    
+    // Handle relative URLs - now content is at root level and served via /assets/
+    match base_path {
+        Some(_base) => {
+            // Since all posts are now in content/ root, relative paths are relative to content/
+            format!("/assets/{}", url)
+        }
+        None => format!("/assets/{}", url)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum MarkdownElement {
     Html(String),
@@ -9,6 +25,10 @@ pub enum MarkdownElement {
 }
 
 pub fn parse_markdown_elements(content: &str) -> Vec<MarkdownElement> {
+    parse_markdown_elements_with_base(content, None)
+}
+
+pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>) -> Vec<MarkdownElement> {
     if content.trim().is_empty() {
         return vec![MarkdownElement::Html("<p>No content available.</p>".to_string())];
     }
@@ -59,15 +79,18 @@ pub fn parse_markdown_elements(content: &str) -> Vec<MarkdownElement> {
                 });
                 continue;
             }
-            // Convert image tags with .mp4/.webm extensions to video tags
-            Event::Start(Tag::Image(_, url, _)) => {
+            // Handle images and videos
+            Event::Start(Tag::Image(link_type, url, title)) => {
+                let resolved_url = resolve_asset_url(url, base_path);
+                
+                // Convert image tags with .mp4/.webm extensions to video tags
                 if url.ends_with(".mp4") || url.ends_with(".webm") || url.ends_with(".mov") {
                     let video_html = format!(
                         r#"<video controls class="w-full my-8 border-2 border-border">
                             <source src="{}" type="video/{}">
                             Your browser does not support the video tag.
                         </video>"#,
-                        url,
+                        resolved_url,
                         if url.ends_with(".mp4") {
                             "mp4"
                         } else if url.ends_with(".webm") {
@@ -77,6 +100,10 @@ pub fn parse_markdown_elements(content: &str) -> Vec<MarkdownElement> {
                         }
                     );
                     events.push(Event::Html(CowStr::from(video_html)));
+                    continue;
+                } else {
+                    // Handle regular images with resolved URLs
+                    events.push(Event::Start(Tag::Image(link_type.clone(), CowStr::from(resolved_url), title.clone())));
                     continue;
                 }
             }
@@ -126,12 +153,12 @@ pub fn render_markdown(content: &str) -> String {
 }
 
 #[component]
-pub fn Markdown(content: String) -> impl IntoView {
+pub fn Markdown(content: String, #[prop(optional)] base_path: Option<String>) -> impl IntoView {
     let elements = create_memo(move |_| {
         if content.is_empty() {
             vec![MarkdownElement::Html("<p>No content available.</p>".to_string())]
         } else {
-            parse_markdown_elements(&content)
+            parse_markdown_elements_with_base(&content, base_path.as_deref())
         }
     });
 

@@ -38,7 +38,7 @@ pub async fn get_all_posts() -> Result<Vec<BlogPost>, std::io::Error> {
     use std::path::Path;
     use tokio::fs;
 
-    let posts_dir = Path::new("content/posts");
+    let posts_dir = Path::new("posts");
     let mut posts = Vec::new();
 
     if posts_dir.exists() {
@@ -67,7 +67,7 @@ pub async fn get_post_by_slug(slug: &str) -> Result<Option<BlogPost>, std::io::E
     use std::path::Path;
     use tokio::fs;
 
-    let post_path = Path::new("content/posts").join(format!("{}.md", slug));
+    let post_path = Path::new("posts").join(format!("{}.md", slug));
 
     if post_path.exists() {
         let content = fs::read_to_string(&post_path).await?;
