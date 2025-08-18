@@ -2,9 +2,11 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::components::post::markdown::Markdown;
-use crate::components::post::header::PostHeader;
-use crate::components::post::interactions::PostInteractions;
+use crate::components::post::{
+    markdown::Markdown,
+    header::PostHeader, 
+    PostInteractions,
+};
 #[cfg(feature = "ssr")]
 use crate::components::post::{get_post_by_slug, increment_view, update_vote};
 
@@ -80,11 +82,9 @@ pub fn PostPage() -> impl IntoView {
                                         // Post content
                                         <Markdown content=post.content/>
                                         
-                                        // Post interactions (voting and sharing)
+                                        // Post interactions (sharing)
                                         <PostInteractions 
                                             slug=post.slug.clone()
-                                            initial_likes=post.metrics.likes
-                                            initial_dislikes=post.metrics.dislikes
                                         />
                                     </article>
                                 }.into_view()
