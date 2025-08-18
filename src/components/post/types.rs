@@ -9,6 +9,14 @@ pub struct BlogPost {
     pub excerpt: String,
     pub content: String,
     pub tags: Vec<String>,
+    pub metrics: PostMetrics,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub struct PostMetrics {
+    pub views: u64,
+    pub likes: u64,
+    pub dislikes: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,6 +26,12 @@ pub struct PostMeta {
     pub excerpt: String,
     pub tags: Vec<String>,
 }
+
+// Server-side functions for handling posts and metrics
+#[cfg(feature = "ssr")]
+use std::sync::Mutex;
+#[cfg(feature = "ssr")]
+use std::collections::HashMap;
 
 #[cfg(feature = "ssr")]
 pub async fn get_all_posts() -> Result<Vec<BlogPost>, std::io::Error> {
@@ -96,11 +110,40 @@ fn parse_post(content: &str, path: &std::path::Path) -> Option<BlogPost> {
     let slug = path.file_stem()?.to_str()?.to_string();
 
     Some(BlogPost {
-        slug,
+        slug: slug.clone(),
         title,
         date,
         excerpt,
         content: result.content,
         tags,
+        metrics: get_post_metrics(&slug),
     })
+}
+
+#[cfg(feature = "ssr")]
+static METRICS_STORE: std::sync::LazyLock<Mutex<HashMap<String, PostMetrics>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+#[cfg(feature = "ssr")]
+pub fn get_post_metrics(slug: &str) -> PostMetrics {
+    let store = METRICS_STORE.lock().unwrap();
+    store.get(slug).cloned().unwrap_or_default()
+}
+
+#[cfg(feature = "ssr")]
+pub fn increment_view(slug: &str) {
+    let mut store = METRICS_STORE.lock().unwrap();
+    let metrics = store.entry(slug.to_string()).or_default();
+    metrics.views += 1;
+}
+
+#[cfg(feature = "ssr")]
+pub fn update_vote(slug: &str, is_like: bool) {
+    let mut store = METRICS_STORE.lock().unwrap();
+    let metrics = store.entry(slug.to_string()).or_default();
+    if is_like {
+        metrics.likes += 1;
+    } else {
+        metrics.dislikes += 1;
+    }
 }
