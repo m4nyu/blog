@@ -1,16 +1,13 @@
-pub mod card_metrics;
-pub mod card_share_button;
 pub mod code;
 pub mod header;
 pub mod interactions;
 pub mod markdown;
-pub mod metrics;
-pub mod server;
 pub mod types;
 
-// Re-export the main types for convenience
+// Re-export everything from types and interactions for convenience
 pub use types::*;
+pub use interactions::*;
 
-// Re-export server functions
+// Re-export server functions conditionally
 #[cfg(feature = "ssr")]
-pub use server::*;
+pub use types::{get_all_posts, get_post_by_slug, increment_view, update_vote};

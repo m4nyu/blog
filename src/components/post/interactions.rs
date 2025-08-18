@@ -1,16 +1,113 @@
 use leptos::*;
-use crate::components::ui::button::{Button, ButtonVariant};
 
+// Component for displaying view count on post cards
 #[component]
-pub fn PostInteractions(
-    slug: String,
-    initial_likes: u64,
-    initial_dislikes: u64,
+pub fn PostCardMetrics(
+    views: u64,
 ) -> impl IntoView {
-    let (likes, set_likes) = create_signal(initial_likes);
-    let (dislikes, set_dislikes) = create_signal(initial_dislikes);
-    let (voted, set_voted) = create_signal::<Option<bool>>(None);
+    view! {
+        <div class="inline-flex items-center justify-center h-8 w-auto px-2 gap-1 text-xs sm:text-sm text-muted-foreground pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            // Views only
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            <span>{views} {if views == 1 { "view" } else { "views" }}</span>
+        </div>
+    }
+}
 
+// Component for share button on post cards
+#[component]
+pub fn CardShareButton(
+    slug: String,
+) -> impl IntoView {
+    #[cfg_attr(not(feature = "hydrate"), allow(unused_variables))]
+    let (is_shared, set_is_shared) = create_signal(false);
+
+    let handle_share = {
+        let _slug = slug.clone();
+        let _set_is_shared = set_is_shared;
+        
+        move |ev: ev::MouseEvent| {
+            ev.stop_propagation();
+            ev.prevent_default();
+            ev.stop_immediate_propagation();
+            
+            if is_shared.get() {
+                return;
+            }
+            
+            // Set to shared immediately for visual feedback
+            _set_is_shared.set(true);
+            
+            let _slug_for_async = _slug.clone();
+            let set_is_shared_clone = _set_is_shared;
+            
+            spawn_local(async move {
+                #[cfg(feature = "hydrate")]
+                {
+                    if let Some(window) = web_sys::window() {
+                        let full_url = format!("{}/post/{}", window.location().origin().unwrap(), _slug_for_async);
+                        
+                        let navigator = window.navigator();
+                        let clipboard = navigator.clipboard();
+                        let promise = clipboard.write_text(&full_url);
+                        let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+                    }
+                }
+                
+                // Wait 2 seconds then reset
+                #[cfg(feature = "hydrate")]
+                {
+                    gloo_timers::future::TimeoutFuture::new(2000).await;
+                }
+                set_is_shared_clone.set(false);
+            });
+        }
+    };
+
+    view! {
+        <button
+            class=move || format!(
+                "inline-flex items-center justify-center h-8 w-8 rounded transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95 opacity-0 group-hover:opacity-100 {}",
+                if is_shared.get() {
+                    "text-green-500 cursor-default"
+                } else {
+                    "text-muted-foreground hover:text-foreground cursor-pointer"
+                }
+            )
+            on:click=handle_share
+        >
+            {move || {
+                if is_shared.get() {
+                    view! {
+                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    }
+                } else {
+                    view! {
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                        </svg>
+                    }
+                }
+            }}
+        </button>
+    }
+}
+
+// Component for view tracking metrics in post header
+#[component]
+pub fn PostMetrics(
+    slug: String,
+    initial_views: u64,
+) -> impl IntoView {
+    #[cfg_attr(not(feature = "hydrate"), allow(unused_variables))]
+    let (views, set_views) = create_signal(initial_views);
+
+    // Track view on component mount
     create_effect({
         #[cfg_attr(not(feature = "hydrate"), allow(unused_variables))]
         let slug_for_effect = slug.clone();
@@ -19,11 +116,21 @@ pub fn PostInteractions(
             {
                 if let Some(window) = web_sys::window() {
                     if let Ok(Some(storage)) = window.local_storage() {
-                        let vote_key = format!("vote_{}", slug_for_effect);
-                        if let Ok(Some(stored_vote)) = storage.get_item(&vote_key) {
-                            if let Ok(is_like) = stored_vote.parse::<bool>() {
-                                set_voted.set(Some(is_like));
-                            }
+                        let view_key = format!("viewed_{}", slug_for_effect);
+                        if let Ok(None) = storage.get_item(&view_key) {
+                            let slug_for_async = slug_for_effect.clone();
+                            let view_key_for_async = view_key.clone();
+                            spawn_local(async move {
+                                use crate::routes::post::track_view;
+                                if let Ok(_) = track_view(slug_for_async).await {
+                                    set_views.update(|v| *v += 1);
+                                    if let Some(window) = web_sys::window() {
+                                        if let Ok(Some(storage)) = window.local_storage() {
+                                            let _ = storage.set_item(&view_key_for_async, "true");
+                                        }
+                                    }
+                                }
+                            });
                         }
                     }
                 }
@@ -32,121 +139,89 @@ pub fn PostInteractions(
     });
 
     view! {
-        <div class="mt-12 pt-8 border-t border-border">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-                <div>
-                    <h3 class="text-lg font-semibold text-foreground mb-4">
-                        "Was this post helpful?"
-                    </h3>
-                    <div class="flex items-center gap-4">
-                        // Thumbs up button
-                        <Button
-                            variant=if voted.get() == Some(true) { ButtonVariant::Default } else { ButtonVariant::Outline }
-                            onclick=Box::new({
-                                let slug = slug.clone();
-                                move || {
-                                    if voted.get() == Some(true) {
-                                        return;
-                                    }
-                                    
-                                    let slug_clone = slug.clone();
-                                    spawn_local(async move {
-                                        use crate::routes::post::submit_vote;
-                                        let _ = submit_vote(slug_clone, true).await;
-                                    });
-                                    
-                                    set_likes.update(|l| *l += 1);
-                                    set_voted.set(Some(true));
-                                    
-                                    #[cfg(feature = "hydrate")]
-                                    {
-                                        if let Some(window) = web_sys::window() {
-                                            if let Ok(Some(storage)) = window.local_storage() {
-                                                let vote_key = format!("vote_{}", slug);
-                                                let _ = storage.set_item(&vote_key, "true");
-                                            }
-                                        }
-                                    }
-                                }
-                            })
-                        >
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"></path>
-                            </svg>
-                            {move || likes.get().to_string()}
-                        </Button>
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            <span>{move || views.get()} {move || if views.get() == 1 { "view" } else { "views" }}</span>
+        </div>
+    }
+}
 
-                        // Thumbs down button  
-                        <Button
-                            variant=if voted.get() == Some(false) { ButtonVariant::Destructive } else { ButtonVariant::Outline }
-                            onclick=Box::new({
-                                let slug = slug.clone();
-                                move || {
-                                    if voted.get() == Some(false) {
-                                        return;
-                                    }
-                                    
-                                    let slug_clone = slug.clone();
-                                    spawn_local(async move {
-                                        use crate::routes::post::submit_vote;
-                                        let _ = submit_vote(slug_clone, false).await;
-                                    });
-                                    
-                                    set_dislikes.update(|d| *d += 1);
-                                    set_voted.set(Some(false));
-                                    
-                                    #[cfg(feature = "hydrate")]
-                                    {
-                                        if let Some(window) = web_sys::window() {
-                                            if let Ok(Some(storage)) = window.local_storage() {
-                                                let vote_key = format!("vote_{}", slug);
-                                                let _ = storage.set_item(&vote_key, "false");
-                                            }
-                                        }
-                                    }
-                                }
-                            })
-                        >
-                            <svg class="w-5 h-5 mr-2 rotate-180" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"></path>
-                            </svg>
-                            {move || dislikes.get().to_string()}
-                        </Button>
-                    </div>
-                </div>
-                
-                <div class="text-center sm:text-right">
+// Component for post interactions at the bottom of post pages  
+#[component]
+pub fn PostInteractions(
+    slug: String,
+) -> impl IntoView {
+    let (is_shared, set_is_shared) = create_signal(false);
+
+    let handle_share = move |_: ev::MouseEvent| {
+        if is_shared.get() {
+            return;
+        }
+        
+        set_is_shared.set(true);
+        
+        let _slug_for_async = slug.clone();
+        let _set_is_shared_clone = set_is_shared;
+        
+        spawn_local(async move {
+            #[cfg(feature = "hydrate")]
+            {
+                if let Some(window) = web_sys::window() {
+                    let full_url = format!("{}/post/{}", window.location().origin().unwrap(), _slug_for_async);
+                    
+                    let navigator = window.navigator();
+                    let clipboard = navigator.clipboard();
+                    let promise = clipboard.write_text(&full_url);
+                    let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+                }
+            }
+            
+            // Wait 2 seconds then reset
+            #[cfg(feature = "hydrate")]
+            {
+                gloo_timers::future::TimeoutFuture::new(2000).await;
+            }
+            _set_is_shared_clone.set(false);
+        });
+    };
+
+    view! {
+        <div class="mt-12 pt-8 border-t border-border">
+            <div class="flex justify-center">
+                <div class="text-center">
                     <p class="text-sm text-muted-foreground mb-3">
                         "Share this post"
                     </p>
-                                            <Button 
-                            variant=ButtonVariant::Outline
-                            onclick=Box::new({
-                                let _slug = slug.clone();
-                                move || {
-                                    #[cfg(feature = "hydrate")]
-                                    let slug_for_async = _slug.clone();
-                                    spawn_local(async move {
-                                        #[cfg(feature = "hydrate")]
-                                        {
-                                            if let Some(window) = web_sys::window() {
-                                                let full_url = format!("{}/{}", window.location().origin().unwrap(), slug_for_async);
-                                                
-                                                let navigator = window.navigator();
-                                                let clipboard = navigator.clipboard();
-                                                let promise = clipboard.write_text(&full_url);
-                                                let _result = wasm_bindgen_futures::JsFuture::from(promise).await;
-                                            }
-                                        }
-                                    });
+                    <button
+                        class=move || format!(
+                            "inline-flex items-center justify-center h-10 w-10 rounded border-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95 {}",
+                            if is_shared.get() {
+                                "border-green-500 text-green-500 cursor-default"
+                            } else {
+                                "border-border text-muted-foreground hover:text-foreground hover:border-ring cursor-pointer"
+                            }
+                        )
+                        on:click=handle_share
+                    >
+                        {move || {
+                            if is_shared.get() {
+                                view! {
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
                                 }
-                            })
-                        >
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
-                        </svg>
-                        "Share"
-                    </Button>
+                            } else {
+                                view! {
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                    </svg>
+                                }
+                            }
+                        }}
+                    </button>
                 </div>
             </div>
         </div>

@@ -2,7 +2,7 @@ use leptos::*;
 use chrono::{DateTime, Utc};
 use crate::components::ui::badge::{Badge, BadgeVariant, BadgeSize};
 use crate::components::ui::button::{Button, ButtonVariant};
-use super::metrics::PostMetrics;
+use super::interactions::PostMetrics;
 
 #[component]
 pub fn PostHeader(

@@ -4,9 +4,7 @@ use leptos_router::*;
 
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::components::ui::life::Life;
-use crate::components::post::card_metrics::PostCardMetrics;
-use crate::components::post::card_share_button::CardShareButton;
-use crate::components::post::BlogPost;
+use crate::components::post::{BlogPost, PostCardMetrics, CardShareButton};
 #[cfg(feature = "ssr")]
 use crate::components::post::get_all_posts;
 
@@ -53,7 +51,7 @@ pub fn HomePage() -> impl IntoView {
             <Life animation_speed=animation_speed population_density=population_density />
             
             <div class="relative min-h-screen">
-                <div class="relative z-10 max-w-5xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-6 md:pt-8 pb-6 sm:pb-12 md:pb-16">
+                <div class="relative z-10 max-w-5xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-1 sm:pt-6 md:pt-8 pb-6 sm:pb-12 md:pb-16">
                 <main>
                     <Suspense fallback=move || view! { <div></div> }>
                         {move || {
@@ -84,33 +82,36 @@ pub fn HomePage() -> impl IntoView {
                                                                 let slug_for_share = post.slug.clone();
                                                                 
                                                                 view! {
-                                                                    <A
-                                                                        href=post_url
-                                                                        class="block w-full"
-                                                                    >
-                                                                        <Card class="w-full h-20 sm:h-24 md:h-28 flex flex-col hover:bg-accent hover:border-ring focus-within:border-ring border-2 border-border transition-colors cursor-pointer group">
-                                                                            <CardHeader class="flex-shrink-0 !p-2 sm:!p-3 md:!p-4 !pb-1 sm:!pb-1 md:!pb-2">
-                                                                                <CardTitle class="text-card-foreground truncate !mb-0 sm:!mb-1 !text-sm sm:!text-base md:!text-xl font-bold">
-                                                                                    {title.clone()}
-                                                                                </CardTitle>
-                                                                            </CardHeader>
-                                                                            <CardContent class="flex-1 flex flex-col !pt-0 !px-2 sm:!px-3 md:!px-4 !pb-2 sm:!pb-3 md:!pb-4">
-                                                                                <p class="text-muted-foreground truncate text-xs sm:text-sm md:text-base">
-                                                                                    {excerpt.clone()}
-                                                                                </p>
-                                                                                <div class="flex items-end justify-between">
-                                                                                    <PostCardMetrics 
-                                                                                        views=post.metrics.views
-                                                                                        likes=post.metrics.likes
-                                                                                        dislikes=post.metrics.dislikes
-                                                                                    />
-                                                                                    <CardShareButton 
-                                                                                        slug=slug_for_share
-                                                                                    />
-                                                                                </div>
-                                                                            </CardContent>
-                                                                        </Card>
-                                                                    </A>
+                                                                    <div class="relative w-full group">
+                                                                        <A
+                                                                            href=post_url
+                                                                            class="block w-full"
+                                                                        >
+                                                                            <Card class="w-full h-20 sm:h-24 md:h-28 flex flex-col hover:bg-accent hover:border-ring focus-within:border-ring border-2 border-border transition-colors cursor-pointer">
+                                                                                <CardHeader class="flex-shrink-0 !p-2 sm:!p-3 md:!p-4 !pb-1 sm:!pb-1 md:!pb-2">
+                                                                                    <CardTitle class="text-card-foreground truncate !mb-0 sm:!mb-1 !text-sm sm:!text-base md:!text-xl font-bold">
+                                                                                        {title.clone()}
+                                                                                    </CardTitle>
+                                                                                </CardHeader>
+                                                                                <CardContent class="flex-1 flex flex-col !pt-0 !px-2 sm:!px-3 md:!px-4 !pb-2 sm:!pb-3 md:!pb-4">
+                                                                                    <p class="text-muted-foreground truncate text-xs sm:text-sm md:text-base">
+                                                                                        {excerpt.clone()}
+                                                                                    </p>
+                                                                                    <div class="flex-1"></div>
+                                                                                </CardContent>
+                                                                            </Card>
+                                                                        </A>
+                                                                        <div class="absolute bottom-1 left-2 sm:bottom-1 sm:left-3 md:bottom-1 md:left-4 pointer-events-none">
+                                                                            <PostCardMetrics 
+                                                                                views=post.metrics.views
+                                                                            />
+                                                                        </div>
+                                                                        <div class="absolute bottom-1 right-2 sm:bottom-1 sm:right-3 md:bottom-1 md:right-4">
+                                                                            <CardShareButton 
+                                                                                slug=slug_for_share
+                                                                            />
+                                                                        </div>
+                                                                    </div>
                                                                 }
                                                             })
                                                             .collect_view()
