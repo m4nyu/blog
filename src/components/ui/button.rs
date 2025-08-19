@@ -8,6 +8,7 @@ pub enum ButtonVariant {
     Secondary,
     Ghost,
     Link,
+    Plain,
 }
 
 impl ButtonVariant {
@@ -25,6 +26,7 @@ impl ButtonVariant {
             }
             ButtonVariant::Ghost => "hover:bg-accent hover:text-accent-foreground",
             ButtonVariant::Link => "text-primary underline-offset-4 hover:underline",
+            ButtonVariant::Plain => "cursor-pointer",
         }
     }
 }
