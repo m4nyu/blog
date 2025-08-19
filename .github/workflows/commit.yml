@@ -2,7 +2,7 @@ name: Commit Checks
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
   validate-commits:
