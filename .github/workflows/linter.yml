@@ -1,0 +1,62 @@
+name: Linter
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  frontend-linting:
+    name: Frontend Linting (Biome)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install
+      - name: Run Biome linting and formatting check
+        run: biome ci .
+      - name: Check if there are linting issues
+        run: |
+          if ! biome lint .; then
+            echo "❌ Biome found linting issues in JS/TS/CSS/JSON files"
+            exit 1
+          fi
+          echo "✅ All frontend files pass linting"
+
+  rust-formatting:
+    name: Rust Formatting (rustfmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check Rust code formatting
+        run: |
+          if ! cargo fmt --check; then
+            echo "❌ Rust code is not formatted correctly"
+            echo "Run 'cargo fmt' to fix formatting issues"
+            exit 1
+          fi
+          echo "✅ All Rust code is properly formatted"
+
+  rust-linting:
+    name: Rust Linting (clippy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Run clippy linting
+        run: |
+          if ! cargo clippy --all-targets --all-features -- -D warnings; then
+            echo "❌ Clippy found linting issues in Rust code"
+            exit 1
+          fi
+          echo "✅ All Rust code passes clippy linting"
