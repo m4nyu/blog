@@ -403,3 +403,16 @@ input[type="range"]::-moz-range-thumb:hover {
     @apply border-0 border-t-2 border-border my-12;
 }
 
+/* Centered content and ASCII art */
+.prose div[align="center"] {
+    @apply text-center;
+}
+
+/* Preserve ASCII art formatting */
+.prose pre.ascii-art,
+.prose .ascii-art {
+    @apply font-mono whitespace-pre text-foreground;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
