@@ -154,7 +154,7 @@ site-pkg-dir = "pkg"
 #
 # Optional, Activates the tailwind build
 tailwind-input-file = "src/styles/global.css"
-assets-dir = "public"
+assets-dir = "src/public"
 # The IP and port (ex: 127.0.0.1:3000) where the server serves the content. Use it in your server setup.
 site-addr = "127.0.0.1:4002"
 # The port to use for automatic reload monitoring
