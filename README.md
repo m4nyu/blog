@@ -1,51 +1,79 @@
-# Leptos Starter Template
+<div align="center">
 
-This is a template demonstrating how to integrate [TailwindCSS](https://tailwindcss.com/) with the [Leptos](https://github.com/leptos-rs/leptos) web framework and the [cargo-leptos](https://github.com/akesson/cargo-leptos) tool.
+<pre style="background: transparent;">
+██████╗ ██╗      ██████╗  ██████╗ 
+██╔══██╗██║     ██╔═══██╗██╔════╝ 
+██████╔╝██║     ██║   ██║██║  ███╗
+██╔══██╗██║     ██║   ██║██║   ██║
+██████╔╝███████╗╚██████╔╝╚██████╔╝
+╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ 
+</pre>
+[![GitHub](https://img.shields.io/badge/GitHub-m4nyu-181717?style=flat&logo=github)](https://github.com/m4nyu)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Manuel%20Szedlak-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/manuel-szedlak)
+[![X](https://img.shields.io/badge/X-ManuelSzedlak-1DA1F2?style=flat&logo=x)](https://x.com/ManuelSzedlak)
 
-## Getting Started
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
+![Leptos](https://img.shields.io/badge/Leptos-0.5.7-EF3939?style=flat&logo=rust&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+![Actix Web](https://img.shields.io/badge/Actix%20Web-4.8-000000?style=flat&logo=rust&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 
-See the [Examples README](../README.md) for setup and run instructions.
+</div>
 
-## Tailwind
-
-You can install Tailwind using `npm`:
+## ▲ Installation
 
 ```bash
-npm install -D tailwindcss
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cargo install cargo-leptos
 ```
 
-If you'd rather not use `npm`, you can install the Tailwind binary [here](https://github.com/tailwindlabs/tailwindcss/releases).
+## ▶ Run
 
-## Setting up with VS Code and Additional Tools
-
-If you're using VS Code, add the following to your `settings.json`
-
-```json
-  "emmet.includeLanguages": {
-    "rust": "html",
-    "*.rs": "html"
-  },
-  "tailwindCSS.includeLanguages": {
-      "rust": "html",
-      "*.rs": "html"
-  },
-  "files.associations": {
-      "*.rs": "rust"
-  },
-  "editor.quickSuggestions": {
-    "other": "on",
-    "comments": "on",
-    "strings": true
-  },
-  "css.validate": false,
+```bash
+cargo leptos watch
 ```
 
-Install [Tailwind CSS Intellisense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss).
+## ■ Adding Posts
 
-Install [VS Browser](https://marketplace.visualstudio.com/items?itemName=Phu1237.vs-browser) extension (allows you to open a browser at the right window).
+Create markdown files in `content/` directory:
 
-Allow vscode Ports forward: 3000, 3001.
+```markdown
+---
+title: "Post Title"
+date: 2024-01-15
+excerpt: "Brief description"
+tags: ["rust", "web"]
+---
 
-### Attribution
+# Content here
 
-Many thanks to GreatGreg for putting together this guide. You can find the original, with added details, [here](https://github.com/leptos-rs/leptos/discussions/125).
+## Images
+![Alt text](./image.png)
+- Place image files in content/ alongside the .md file
+- Supports: png, jpg, jpeg, gif, svg, webp
+
+## Videos  
+![Video description](./video.mp4)
+- Use standard image syntax for videos
+- Supports: mp4, webm
+- Auto-renders as video player with controls
+
+## Code Blocks
+```javascript
+console.log("This is executable!");
+// Click 'Run' button to execute
+```
+
+## ◆ Structure
+
+```
+content/         # Your blog posts and media
+├── post-1.md
+├── post-2.md
+└── image.png
+
+src/             # Blog engine (Rust/Leptos)
+public/          # Static assets
+```
+
