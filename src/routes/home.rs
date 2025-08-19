@@ -4,7 +4,8 @@ use leptos_router::*;
 
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::components::ui::life::Life;
-use crate::components::post::{BlogPost, PostCardMetrics, CardShareButton};
+use crate::components::post::{BlogPost, PostCardMetrics};
+use crate::components::ui::button::{Button, ButtonVariant};
 #[cfg(feature = "ssr")]
 use crate::components::post::get_all_posts;
 
@@ -106,10 +107,68 @@ pub fn HomePage() -> impl IntoView {
                                                                                 views=post.metrics.views
                                                                             />
                                                                         </div>
-                                                                        <div class="absolute bottom-1 right-2 sm:bottom-1 sm:right-3 md:bottom-1 md:right-4">
-                                                                            <CardShareButton 
-                                                                                slug=slug_for_share
-                                                                            />
+                                                                        <div class="absolute bottom-1 right-2 sm:bottom-1 sm:right-3 md:bottom-1 md:right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            {
+                                                                                let (is_shared, set_is_shared) = create_signal(false);
+                                                                                view! {
+                                                                                    <Button 
+                                                                                        variant=ButtonVariant::Plain
+                                                                                        onclick=Box::new({
+                                                                                            let slug_for_async = slug_for_share.clone();
+                                                                                            let _set_is_shared = set_is_shared;
+                                                                                            move || {
+                                                                                                if is_shared.get() {
+                                                                                                    return;
+                                                                                                }
+                                                                                                
+                                                                                                // Set to shared immediately for visual feedback
+                                                                                                _set_is_shared.set(true);
+                                                                                                
+                                                                                                let _slug_clone = slug_for_async.clone();
+                                                                                                let _set_is_shared_clone = _set_is_shared;
+                                                                                                
+                                                                                                spawn_local(async move {
+                                                                                                    #[cfg(feature = "hydrate")]
+                                                                                                    {
+                                                                                                        if let Some(window) = web_sys::window() {
+                                                                                                            let full_url = format!("{}/post/{}", window.location().origin().unwrap(), _slug_clone);
+                                                                                                            
+                                                                                                            let navigator = window.navigator();
+                                                                                                            let clipboard = navigator.clipboard();
+                                                                                                            let promise = clipboard.write_text(&full_url);
+                                                                                                            let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+                                                                                                        }
+                                                                                                    }
+                                                                                                    
+                                                                                                    // Wait 2 seconds then reset
+                                                                                                    #[cfg(feature = "hydrate")]
+                                                                                                    {
+                                                                                                        gloo_timers::future::TimeoutFuture::new(2000).await;
+                                                                                                    }
+                                                                                                    _set_is_shared_clone.set(false);
+                                                                                                });
+                                                                                            }
+                                                                                        })
+                                                                                        attr:class=move || if is_shared.get() { "text-green-500" } else { "text-muted-foreground hover:text-foreground" }
+                                                                                    >
+                                                                                        {move || {
+                                                                                            if is_shared.get() {
+                                                                                                view! {
+                                                                                                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                                                    </svg>
+                                                                                                }
+                                                                                            } else {
+                                                                                                view! {
+                                                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                                                                                    </svg>
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                    </Button>
+                                                                                }
+                                                                            }
                                                                         </div>
                                                                     </div>
                                                                 }
