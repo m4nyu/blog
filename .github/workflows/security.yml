@@ -2,9 +2,9 @@ name: Security Audit
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   schedule:
     # Run security audit weekly on Sundays at 12:00 UTC
     - cron: '0 12 * * 0'
