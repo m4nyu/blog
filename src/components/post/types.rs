@@ -29,9 +29,9 @@ pub struct PostMeta {
 
 // Server-side functions for handling posts and metrics
 #[cfg(feature = "ssr")]
-use std::sync::Mutex;
-#[cfg(feature = "ssr")]
 use std::collections::HashMap;
+#[cfg(feature = "ssr")]
+use std::sync::Mutex;
 
 #[cfg(feature = "ssr")]
 pub async fn get_all_posts() -> Result<Vec<BlogPost>, std::io::Error> {

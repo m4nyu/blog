@@ -1,11 +1,9 @@
-use leptos::*;
 use crate::components::ui::button::{Button, ButtonVariant};
+use leptos::*;
 
 // Component for displaying view count on post cards
 #[component]
-pub fn PostCardMetrics(
-    views: u64,
-) -> impl IntoView {
+pub fn PostCardMetrics(views: u64) -> impl IntoView {
     view! {
         <div class="inline-flex items-center justify-center h-8 w-auto px-2 gap-1 text-xs sm:text-sm text-muted-foreground pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             // Views only
@@ -18,13 +16,9 @@ pub fn PostCardMetrics(
     }
 }
 
-
 // Component for view tracking metrics in post header
 #[component]
-pub fn PostMetrics(
-    slug: String,
-    initial_views: u64,
-) -> impl IntoView {
+pub fn PostMetrics(slug: String, initial_views: u64) -> impl IntoView {
     #[cfg_attr(not(feature = "hydrate"), allow(unused_variables))]
     let (views, set_views) = create_signal(initial_views);
 
@@ -70,42 +64,44 @@ pub fn PostMetrics(
     }
 }
 
-// Component for post interactions at the bottom of post pages  
+// Component for post interactions at the bottom of post pages
 #[component]
-pub fn PostInteractions(
-    slug: String,
-) -> impl IntoView {
+pub fn PostInteractions(slug: String) -> impl IntoView {
     #[cfg_attr(not(feature = "hydrate"), allow(unused_variables))]
     let (is_shared, set_is_shared) = create_signal(false);
 
     let handle_share = {
         let _slug = slug.clone();
         let _set_is_shared = set_is_shared;
-        
+
         move || {
             if is_shared.get() {
                 return;
             }
-            
+
             // Set to shared immediately for visual feedback
             _set_is_shared.set(true);
-            
+
             let _slug_for_async = _slug.clone();
             let _set_is_shared_clone = _set_is_shared;
-            
+
             spawn_local(async move {
                 #[cfg(feature = "hydrate")]
                 {
                     if let Some(window) = web_sys::window() {
-                        let full_url = format!("{}/post/{}", window.location().origin().unwrap(), _slug_for_async);
-                        
+                        let full_url = format!(
+                            "{}/post/{}",
+                            window.location().origin().unwrap(),
+                            _slug_for_async
+                        );
+
                         let navigator = window.navigator();
                         let clipboard = navigator.clipboard();
                         let promise = clipboard.write_text(&full_url);
                         let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
                     }
                 }
-                
+
                 // Wait 2 seconds then reset
                 #[cfg(feature = "hydrate")]
                 {
@@ -123,7 +119,7 @@ pub fn PostInteractions(
                     <p class="text-sm text-muted-foreground mb-3">
                         "Share this post"
                     </p>
-                    <Button 
+                    <Button
                         variant=ButtonVariant::Plain
                         onclick=Box::new(handle_share)
                         attr:class=move || if is_shared.get() { "text-green-500" } else { "text-muted-foreground hover:text-foreground" }

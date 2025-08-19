@@ -1,9 +1,9 @@
 use leptos::*;
 
 #[cfg(feature = "hydrate")]
-use web_sys;
-#[cfg(feature = "hydrate")]
 use wasm_bindgen::JsCast;
+#[cfg(feature = "hydrate")]
+use web_sys;
 
 #[component]
 pub fn Dialog(
@@ -25,7 +25,7 @@ pub fn Dialog(
 
     #[cfg(not(feature = "hydrate"))]
     let handle_speed_change = move |_ev| {};
-    
+
     // Handle density changes
     #[cfg(feature = "hydrate")]
     let handle_density_change = move |ev: web_sys::Event| {
@@ -45,18 +45,18 @@ pub fn Dialog(
         <Show when=move || show_settings.get() fallback=|| ()>
             <div class="fixed inset-0 z-[100]">
                 // Full-screen backdrop with blur
-                <div 
+                <div
                     class="absolute inset-0 backdrop-blur-sm"
                     on:click=move |_| {
                         show_settings.set(false);
                     }
                 ></div>
-                
+
                 // Semi-transparent overlay for darkening
                 <div class="absolute inset-0 bg-black/50 pointer-events-none"></div>
-                
+
                 // Dialog - absolutely centered in full viewport
-                <div 
+                <div
                     class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-popover shadow-xl border border-border p-3 sm:p-4 w-[85vw] sm:w-96 max-w-[90vw]"
                     on:click=move |e| {
                         e.stop_propagation();
@@ -75,7 +75,7 @@ pub fn Dialog(
                             </svg>
                         </button>
                     </div>
-                    
+
                     <div class="space-y-4 sm:space-y-6">
                         // Animation Speed Control
                         <div>
@@ -101,7 +101,7 @@ pub fn Dialog(
                                 </div>
                             </div>
                         </div>
-                        
+
                         // Population Density Control
                         <div>
                             <label class="block text-xs sm:text-sm font-medium text-popover-foreground mb-1.5 sm:mb-2">
@@ -127,7 +127,7 @@ pub fn Dialog(
                                 </div>
                             </div>
                         </div>
-                        
+
                         // Theme Mode Control
                         <div>
                             <label class="block text-xs sm:text-sm font-medium text-popover-foreground mb-1.5 sm:mb-2">

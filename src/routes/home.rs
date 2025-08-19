@@ -2,12 +2,12 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
-use crate::components::ui::life::Life;
-use crate::components::post::{BlogPost, PostCardMetrics};
-use crate::components::ui::button::{Button, ButtonVariant};
 #[cfg(feature = "ssr")]
 use crate::components::post::get_all_posts;
+use crate::components::post::{BlogPost, PostCardMetrics};
+use crate::components::ui::button::{Button, ButtonVariant};
+use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
+use crate::components::ui::life::Life;
 
 #[server(GetPosts, "/api")]
 pub async fn get_posts() -> Result<Vec<crate::components::post::BlogPost>, ServerFnError> {
@@ -25,11 +25,13 @@ pub fn HomePage() -> impl IntoView {
     // Get global contexts
     let posts = use_context::<Resource<(), Result<Vec<BlogPost>, ServerFnError>>>()
         .expect("posts context not provided");
-    
+
     // Get animation speed, population density, and search query from global context
     let animation_speed = use_context::<RwSignal<u64>>().unwrap_or_else(|| RwSignal::new(100u64));
-    let population_density = use_context::<RwSignal<f64>>().unwrap_or_else(|| RwSignal::new(0.08f64));
-    let search_query = use_context::<RwSignal<String>>().unwrap_or_else(|| RwSignal::new(String::new()));
+    let population_density =
+        use_context::<RwSignal<f64>>().unwrap_or_else(|| RwSignal::new(0.08f64));
+    let search_query =
+        use_context::<RwSignal<String>>().unwrap_or_else(|| RwSignal::new(String::new()));
 
     // Function to filter posts based on search query
     let filter_posts = move |posts: Vec<crate::components::post::BlogPost>| {
@@ -37,10 +39,11 @@ pub fn HomePage() -> impl IntoView {
         if query.is_empty() {
             posts
         } else {
-            posts.into_iter()
+            posts
+                .into_iter()
                 .filter(|post| {
-                    post.title.to_lowercase().contains(&query) ||
-                    post.excerpt.to_lowercase().contains(&query)
+                    post.title.to_lowercase().contains(&query)
+                        || post.excerpt.to_lowercase().contains(&query)
                 })
                 .collect()
         }
@@ -50,7 +53,7 @@ pub fn HomePage() -> impl IntoView {
         <>
             <Title text="blog"/>
             <Life animation_speed=animation_speed population_density=population_density />
-            
+
             <div class="relative min-h-screen">
                 <div class="relative z-10 max-w-5xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-1 sm:pt-6 md:pt-8 pb-6 sm:pb-12 md:pb-16">
                 <main>
@@ -81,7 +84,7 @@ pub fn HomePage() -> impl IntoView {
                                                                 let title = post.title.clone();
                                                                 let excerpt = post.excerpt.clone();
                                                                 let slug_for_share = post.slug.clone();
-                                                                
+
                                                                 view! {
                                                                     <div class="relative w-full group">
                                                                         <A
@@ -103,7 +106,7 @@ pub fn HomePage() -> impl IntoView {
                                                                             </Card>
                                                                         </A>
                                                                         <div class="absolute bottom-1 left-2 sm:bottom-1 sm:left-3 md:bottom-1 md:left-4 pointer-events-none">
-                                                                            <PostCardMetrics 
+                                                                            <PostCardMetrics
                                                                                 views=post.metrics.views
                                                                             />
                                                                         </div>
@@ -111,7 +114,7 @@ pub fn HomePage() -> impl IntoView {
                                                                             {
                                                                                 let (is_shared, set_is_shared) = create_signal(false);
                                                                                 view! {
-                                                                                    <Button 
+                                                                                    <Button
                                                                                         variant=ButtonVariant::Plain
                                                                                         onclick=Box::new({
                                                                                             let slug_for_async = slug_for_share.clone();
@@ -120,26 +123,26 @@ pub fn HomePage() -> impl IntoView {
                                                                                                 if is_shared.get() {
                                                                                                     return;
                                                                                                 }
-                                                                                                
+
                                                                                                 // Set to shared immediately for visual feedback
                                                                                                 _set_is_shared.set(true);
-                                                                                                
+
                                                                                                 let _slug_clone = slug_for_async.clone();
                                                                                                 let _set_is_shared_clone = _set_is_shared;
-                                                                                                
+
                                                                                                 spawn_local(async move {
                                                                                                     #[cfg(feature = "hydrate")]
                                                                                                     {
                                                                                                         if let Some(window) = web_sys::window() {
                                                                                                             let full_url = format!("{}/post/{}", window.location().origin().unwrap(), _slug_clone);
-                                                                                                            
+
                                                                                                             let navigator = window.navigator();
                                                                                                             let clipboard = navigator.clipboard();
                                                                                                             let promise = clipboard.write_text(&full_url);
                                                                                                             let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
                                                                                                         }
                                                                                                     }
-                                                                                                    
+
                                                                                                     // Wait 2 seconds then reset
                                                                                                     #[cfg(feature = "hydrate")]
                                                                                                     {

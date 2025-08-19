@@ -49,13 +49,17 @@ pub fn Badge(
 ) -> impl IntoView {
     let variant = variant.unwrap_or(BadgeVariant::Default);
     let size = size.unwrap_or(BadgeSize::Medium);
-    
-    let base_classes = "inline-flex items-center font-medium border transition-colors hover:bg-opacity-80";
+
+    let base_classes =
+        "inline-flex items-center font-medium border transition-colors hover:bg-opacity-80";
     let variant_classes = variant.classes();
     let size_classes = size.classes();
     let additional_classes = class.unwrap_or("");
-    
-    let combined_classes = format!("{} {} {} {}", base_classes, variant_classes, size_classes, additional_classes);
+
+    let combined_classes = format!(
+        "{} {} {} {}",
+        base_classes, variant_classes, size_classes, additional_classes
+    );
 
     view! {
         <span class=combined_classes>
