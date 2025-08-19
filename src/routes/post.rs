@@ -2,13 +2,9 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::components::post::{
-    markdown::Markdown,
-    header::PostHeader, 
-    PostInteractions,
-};
 #[cfg(feature = "ssr")]
 use crate::components::post::{get_post_by_slug, increment_view, update_vote};
+use crate::components::post::{header::PostHeader, markdown::Markdown, PostInteractions};
 
 #[server(GetPost, "/api")]
 pub async fn get_post(
@@ -70,7 +66,7 @@ pub fn PostPage() -> impl IntoView {
                                         </A>
 
                                         // Post header with metadata and metrics
-                                        <PostHeader 
+                                        <PostHeader
                                             slug=post.slug.clone()
                                             title=post.title.clone()
                                             date=post.date
@@ -81,9 +77,9 @@ pub fn PostPage() -> impl IntoView {
 
                                         // Post content
                                         <Markdown content=post.content base_path=format!("{}.md", post.slug)/>
-                                        
+
                                         // Post interactions (sharing)
-                                        <PostInteractions 
+                                        <PostInteractions
                                             slug=post.slug.clone()
                                         />
                                     </article>

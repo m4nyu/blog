@@ -1,8 +1,8 @@
-use leptos::*;
-use chrono::{DateTime, Utc};
-use crate::components::ui::badge::{Badge, BadgeVariant, BadgeSize};
-use crate::components::ui::button::{Button, ButtonVariant};
 use super::interactions::PostMetrics;
+use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
+use crate::components::ui::button::{Button, ButtonVariant};
+use chrono::{DateTime, Utc};
+use leptos::*;
 
 #[component]
 pub fn PostHeader(
@@ -18,7 +18,7 @@ pub fn PostHeader(
     view! {
         <div class="mb-8 sm:mb-10 md:mb-12 pb-6 sm:pb-7 md:pb-8 border-b-2 border-border">
             <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-3.5 md:mb-4 text-foreground leading-tight">{title.clone()}</h1>
-            
+
             <div class="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-3.5 md:mb-4 text-xs sm:text-sm text-muted-foreground">
                 <div class="flex items-center gap-1.5 sm:gap-2">
                     <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,9 +27,9 @@ pub fn PostHeader(
                     <span>{date.format("%B %d, %Y").to_string()}</span>
                 </div>
             </div>
-            
+
             <p class="text-base sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-5 md:mb-6 leading-relaxed italic">{excerpt.clone()}</p>
-            
+
             <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
                 {tags.into_iter().map(|tag| {
                     view! {
@@ -39,11 +39,11 @@ pub fn PostHeader(
                     }
                 }).collect::<Vec<_>>()}
             </div>
-            
+
             <div class="flex items-center justify-between">
                 <PostMetrics slug=slug.clone() initial_views=initial_views />
-                
-                <Button 
+
+                <Button
                     variant=ButtonVariant::Plain
                     onclick=Box::new({
                         let _slug = slug.clone();
@@ -52,26 +52,26 @@ pub fn PostHeader(
                             if is_shared.get() {
                                 return;
                             }
-                            
+
                             // Set to shared immediately for visual feedback
                             _set_is_shared.set(true);
-                            
+
                             let _slug_for_async = _slug.clone();
                             let _set_is_shared_clone = _set_is_shared;
-                            
+
                             spawn_local(async move {
                                 #[cfg(feature = "hydrate")]
                                 {
                                     if let Some(window) = web_sys::window() {
                                         let full_url = format!("{}/post/{}", window.location().origin().unwrap(), _slug_for_async);
-                                        
+
                                         let navigator = window.navigator();
                                         let clipboard = navigator.clipboard();
                                         let promise = clipboard.write_text(&full_url);
                                         let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
                                     }
                                 }
-                                
+
                                 // Wait 2 seconds then reset
                                 #[cfg(feature = "hydrate")]
                                 {

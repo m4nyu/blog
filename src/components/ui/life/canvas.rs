@@ -96,25 +96,31 @@ impl CanvasRenderer {
         #[cfg(feature = "hydrate")]
         {
             use web_sys::window;
-            
+
             // Try to read theme colors from CSS variables
             if let Some(window) = window() {
                 if let Some(document) = window.document() {
                     if let Some(element) = document.document_element() {
                         if let Ok(styles) = window.get_computed_style(&element) {
                             if let Some(styles) = styles {
-                                let fg_color = styles.get_property_value("--color-foreground").unwrap_or_default();
-                                let border_color = styles.get_property_value("--color-border").unwrap_or_default();
-                                
+                                let fg_color = styles
+                                    .get_property_value("--color-foreground")
+                                    .unwrap_or_default();
+                                let border_color = styles
+                                    .get_property_value("--color-border")
+                                    .unwrap_or_default();
+
                                 if !fg_color.is_empty() {
                                     self.config.alive_color = fg_color;
-                                    
+
                                     if is_dark {
-                                        self.config.dead_color = "hsl(0 0% 0%)".to_string(); // Force pure black
+                                        self.config.dead_color = "hsl(0 0% 0%)".to_string();
+                                    // Force pure black
                                     } else {
-                                        self.config.dead_color = "hsl(0 0% 100%)".to_string(); // Force pure white
+                                        self.config.dead_color = "hsl(0 0% 100%)".to_string();
+                                        // Force pure white
                                     }
-                                    
+
                                     if !border_color.is_empty() {
                                         self.config.grid_color = border_color;
                                     }
@@ -126,7 +132,7 @@ impl CanvasRenderer {
                 }
             }
         }
-        
+
         // Fallback if CSS variables can't be read
         if is_dark {
             self.config.alive_color = "hsl(0 0% 98%)".to_string();
@@ -212,7 +218,7 @@ impl CanvasRenderer {
     pub fn setup_canvas(&self, canvas: &HtmlCanvasElement, universe: &Universe) {
         let canvas_width = self.config.canvas_width(universe.width()) as u32;
         let canvas_height = self.config.canvas_height(universe.height()) as u32;
-        
+
         canvas.set_width(canvas_width);
         canvas.set_height(canvas_height);
 
@@ -220,7 +226,7 @@ impl CanvasRenderer {
         let style = canvas.style();
         let _ = style.set_property("width", &format!("{}px", canvas_width));
         let _ = style.set_property("height", &format!("{}px", canvas_height));
-        
+
         // Disable image smoothing for pixel-perfect rendering
         if let Ok(Some(ctx)) = canvas.get_context("2d") {
             if let Ok(ctx) = ctx.dyn_into::<CanvasRenderingContext2d>() {
@@ -233,7 +239,7 @@ impl CanvasRenderer {
 #[cfg(feature = "hydrate")]
 pub fn get_theme_colors() -> (String, String) {
     use web_sys::window;
-    
+
     if let Some(window) = window() {
         if let Some(document) = window.document() {
             if let Some(element) = document.document_element() {
@@ -241,11 +247,19 @@ pub fn get_theme_colors() -> (String, String) {
                 if let Ok(styles) = window.get_computed_style(&element) {
                     if let Some(styles) = styles {
                         // Read directly from your theme CSS variables
-                        let bg_color = styles.get_property_value("--color-background").unwrap_or_default();
-                        let fg_color = styles.get_property_value("--color-foreground").unwrap_or_default();
-                        
-                        leptos::logging::log!("Reading theme CSS vars - bg: '{}', fg: '{}'", bg_color, fg_color);
-                        
+                        let bg_color = styles
+                            .get_property_value("--color-background")
+                            .unwrap_or_default();
+                        let fg_color = styles
+                            .get_property_value("--color-foreground")
+                            .unwrap_or_default();
+
+                        leptos::logging::log!(
+                            "Reading theme CSS vars - bg: '{}', fg: '{}'",
+                            bg_color,
+                            fg_color
+                        );
+
                         if !bg_color.is_empty() && !fg_color.is_empty() {
                             let class_list = element.class_list();
                             if class_list.contains("dark") {
@@ -258,7 +272,7 @@ pub fn get_theme_colors() -> (String, String) {
                         }
                     }
                 }
-                
+
                 // Fallback if CSS variables can't be read
                 let class_list = element.class_list();
                 if class_list.contains("dark") {
@@ -271,7 +285,7 @@ pub fn get_theme_colors() -> (String, String) {
             }
         }
     }
-    
+
     leptos::logging::log!("Final fallback - light mode");
     ("hsl(0 0% 100%)".to_string(), "hsl(0 0% 3.9%)".to_string())
 }
@@ -335,43 +349,37 @@ pub struct PatternManager;
 impl PatternManager {
     pub fn get_pattern_names() -> Vec<&'static str> {
         vec![
-            "Empty",
-            "Random",
-            "Glider",
-            "Blinker", 
-            "Toad",
-            "Beacon",
-            "Pulsar",
+            "Empty", "Random", "Glider", "Blinker", "Toad", "Beacon", "Pulsar",
         ]
     }
 
     pub fn apply_pattern(universe: &mut Universe, pattern_name: &str) {
         universe.clear();
-        
+
         match pattern_name {
-            "Empty" => {},
+            "Empty" => {}
             "Random" => universe.randomize(0.25),
             "Glider" => {
                 universe.add_glider(5, 5);
                 universe.add_glider(15, 25);
                 universe.add_glider(25, 15);
-            },
+            }
             "Blinker" => {
                 universe.add_blinker(10, 10);
                 universe.add_blinker(20, 20);
                 universe.add_blinker(30, 30);
-            },
+            }
             "Toad" => {
                 universe.add_toad(10, 10);
                 universe.add_toad(20, 20);
-            },
+            }
             "Beacon" => {
                 universe.add_beacon(10, 10);
                 universe.add_beacon(20, 20);
-            },
+            }
             "Pulsar" => {
                 universe.add_pulsar(5, 5);
-            },
+            }
             _ => universe.randomize(0.25),
         }
     }

@@ -36,7 +36,7 @@
   "files": {
     "include": [
       "**/*.js",
-      "**/*.ts", 
+      "**/*.ts",
       "**/*.jsx",
       "**/*.tsx",
       "**/*.json",
@@ -44,12 +44,6 @@
       "tailwind.config.ts",
       "input.css"
     ],
-    "ignore": [
-      "target/**",
-      "node_modules/**", 
-      "dist/**",
-      "*.lock",
-      "end2end/**"
-    ]
+    "ignore": ["target/**", "node_modules/**", "dist/**", "*.lock", "end2end/**"]
   }
 }
