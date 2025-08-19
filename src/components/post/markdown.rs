@@ -39,6 +39,7 @@ pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>)
     options.insert(Options::ENABLE_FOOTNOTES);
     options.insert(Options::ENABLE_TASKLISTS);
     options.insert(Options::ENABLE_SMART_PUNCTUATION);
+    options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
 
     let parser = Parser::new_ext(content, options);
     let mut elements = Vec::new();
@@ -50,6 +51,11 @@ pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>)
 
     for event in parser {
         match &event {
+            Event::Html(html) => {
+                // Pass HTML through directly, preserving entities
+                events.push(Event::Html(html.clone()));
+                continue;
+            }
             Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) => {
                 // Flush any accumulated HTML
                 if !current_html.is_empty() || !events.is_empty() {
@@ -166,9 +172,29 @@ pub fn Markdown(content: String, #[prop(optional)] base_path: Option<String>) ->
         <div class="prose text-foreground max-w-none text-sm sm:text-base md:text-lg leading-relaxed">
             {move || elements.get().into_iter().enumerate().map(|(_i, element)| {
                 match element {
-                    MarkdownElement::Html(html) => view! {
-                        <div inner_html=html></div>
-                    }.into_view(),
+                    MarkdownElement::Html(html) => {
+                        // Check if this contains ASCII art or is a pre tag with ASCII art
+                        let is_ascii_art = html.contains("██") || html.contains("╗") || html.contains("╔") || html.contains("╚") || html.contains("═");
+                        
+                        if is_ascii_art {
+                            // If it's already wrapped in a pre tag, add transparent background styles
+                            let styled_html = if html.contains("<pre>") {
+                                html.replace("<pre>", r#"<pre style="background: transparent !important; border: none !important; padding: 0 !important;">"#)
+                            } else {
+                                // Replace <br> tags with actual newlines for proper display in pre tag
+                                let formatted = html.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n");
+                                format!(r#"<pre style="background: transparent !important; border: none !important; padding: 0 !important;">{}</pre>"#, formatted)
+                            };
+                            
+                            view! {
+                                <div class="flex justify-center font-mono" inner_html=styled_html></div>
+                            }.into_view()
+                        } else {
+                            view! {
+                                <div inner_html=html></div>
+                            }.into_view()
+                        }
+                    },
                     MarkdownElement::CodeBlock { code, language } => view! {
                         <CodeRunner
                             code=code
