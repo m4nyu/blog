@@ -6,25 +6,14 @@
   "scripts": {
     "dev": "cargo leptos watch",
     "build": "cargo leptos build --release",
-    "css:build": "tailwindcss -i ./input.css -o ./target/site/pkg/tailwind_actix.css --watch",
-    "css:prod": "tailwindcss -i ./input.css -o ./target/site/pkg/tailwind_actix.css --minify",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "lint": "biome lint --write .",
-    "lint:check": "biome lint .",
-    "check": "biome check --write .",
-    "check:ci": "biome ci .",
-    "install:clean": "rm -rf node_modules bun.lockb && bun install",
-    "typecheck": "tsc --noEmit"
+    "format": "biome format --write . && cargo fmt",
+    "lint": "biome lint --write . && cargo clippy --all-targets --all-features",
+    "check": "biome ci . && cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings",
+    "test": "cargo test"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "postcss-cli": "^11.0.0",
-    "postcss-import": "^16.0.0",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.0.0"
+    "tailwindcss": "^4.0.0"
   },
   "engines": {
     "bun": ">=1.0.0"

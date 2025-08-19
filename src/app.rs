@@ -7,14 +7,14 @@ use web_sys;
 
 use crate::components::header::Header;
 use crate::components::ui::dialog::Dialog;
+use crate::routes::home::get_posts;
 use crate::routes::home::HomePage;
 use crate::routes::post::PostPage;
-use crate::routes::home::get_posts;
 
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
-    
+
     // Initialize settings from localStorage or defaults
     #[cfg(feature = "hydrate")]
     let (animation_speed, theme_mode, population_density) = {
@@ -28,36 +28,38 @@ pub fn App() -> impl IntoView {
             }
             default.to_string()
         };
-        
+
         let animation_speed_val = get_from_storage("blog_animation_speed", "100")
-            .parse::<u64>().unwrap_or(100);
+            .parse::<u64>()
+            .unwrap_or(100);
         let theme_mode_val = get_from_storage("blog_theme_mode", "system");
         let population_density_val = get_from_storage("blog_population_density", "0.08")
-            .parse::<f64>().unwrap_or(0.08);
-            
+            .parse::<f64>()
+            .unwrap_or(0.08);
+
         (
             RwSignal::new(animation_speed_val),
             RwSignal::new(theme_mode_val),
-            RwSignal::new(population_density_val)
+            RwSignal::new(population_density_val),
         )
     };
-    
+
     #[cfg(not(feature = "hydrate"))]
     let (animation_speed, theme_mode, population_density) = (
         RwSignal::new(100u64),
         RwSignal::new("system".to_string()),
-        RwSignal::new(0.08f64)
+        RwSignal::new(0.08f64),
     );
-    
+
     // Global settings dialog control
     let show_settings = RwSignal::new(false);
-    
+
     // Global search query control
     let search_query = RwSignal::new(String::new());
-    
+
     // Global posts resource
     let posts = create_resource(|| (), |_| async { get_posts().await });
-    
+
     // Save settings to localStorage when they change
     #[cfg(feature = "hydrate")]
     {
@@ -68,25 +70,25 @@ pub fn App() -> impl IntoView {
                 }
             }
         };
-        
+
         // Watch animation speed changes
         create_effect(move |_| {
             let speed = animation_speed.get();
             save_to_storage("blog_animation_speed", &speed.to_string());
         });
-        
+
         // Watch population density changes
         create_effect(move |_| {
             let density = population_density.get();
             save_to_storage("blog_population_density", &density.to_string());
         });
-        
+
         // Watch theme mode changes
         create_effect(move |_| {
             let mode = theme_mode.get();
             save_to_storage("blog_theme_mode", &mode);
         });
-        
+
         // Apply initial theme on load
         create_effect(move |_| {
             let mode = theme_mode.get();
@@ -95,22 +97,24 @@ pub fn App() -> impl IntoView {
                     if let Some(html) = document.document_element() {
                         let class_list = html.class_list();
                         let _ = class_list.remove_1("dark");
-                        
+
                         match mode.as_str() {
                             "dark" => {
                                 let _ = class_list.add_1("dark");
-                            },
+                            }
                             "light" => {
                                 // Already removed dark class
-                            },
+                            }
                             "system" => {
                                 // Check system preference
-                                if let Ok(Some(media_query)) = window.match_media("(prefers-color-scheme: dark)") {
+                                if let Ok(Some(media_query)) =
+                                    window.match_media("(prefers-color-scheme: dark)")
+                                {
                                     if media_query.matches() {
                                         let _ = class_list.add_1("dark");
                                     }
                                 }
-                            },
+                            }
                             _ => {}
                         }
                     }
@@ -118,7 +122,7 @@ pub fn App() -> impl IntoView {
             }
         });
     }
-    
+
     // Handle theme changes
     #[cfg(feature = "hydrate")]
     let handle_theme_change = move |mode: String| {
@@ -129,7 +133,7 @@ pub fn App() -> impl IntoView {
     let handle_theme_change = move |mode: String| {
         theme_mode.set(mode);
     };
-    
+
     // Provide global context for animation speed, settings, search, posts, and population density
     provide_context(animation_speed);
     provide_context(show_settings);
@@ -146,17 +150,17 @@ pub fn App() -> impl IntoView {
         <Meta name="theme-color" content="#000000"/>
         <Title text="blog"/>
         <Meta name="description" content="A blog built with Leptos and Rust"/>
-        
+
         // Load Prism.js CSS theme
         <Link rel="stylesheet" href="/prism.css"/>
-        
+
         // Load Prism with autoloader only
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-        
+
         // Load Pyodide for Python execution
         <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
-        
+
         // Load Container2wasm for universal language execution
         <script type="module">
             r#"
@@ -192,7 +196,7 @@ pub fn App() -> impl IntoView {
             loadPyodideRuntime();
             "#
         </script>
-        
+
         // Theme switching for syntax highlighting
         <script>
             r#"
@@ -236,7 +240,7 @@ pub fn App() -> impl IntoView {
             });
             "#
         </script>
-        
+
         // Prevent theme flash by applying theme immediately
         <script>
             r#"
@@ -266,7 +270,7 @@ pub fn App() -> impl IntoView {
             })();
             "#
         </script>
-        
+
         // JavaScript functions for code block functionality
         <script>
             r#"
@@ -539,7 +543,7 @@ pub fn App() -> impl IntoView {
                 <Routes>
                     <Route path="" view=move || view! {
                         <>
-                            <Header 
+                            <Header
                                 on_theme_change=Callback::new(handle_theme_change.clone())
                             />
                             <main class="min-h-screen pt-16">
@@ -554,9 +558,9 @@ pub fn App() -> impl IntoView {
                     }/>
                 </Routes>
             </div>
-            
+
             // Settings Dialog
-            <Dialog 
+            <Dialog
                 show_settings=show_settings
                 animation_speed=animation_speed
                 population_density=population_density

@@ -103,22 +103,17 @@ impl CodeExecutor {
     #[cfg(feature = "hydrate")]
     pub async fn execute(&self, language: CodeLanguage, code: &str) -> ExecutionResult {
         let start_time = js_sys::Date::now();
-        
+
         match language {
             CodeLanguage::JavaScript | CodeLanguage::TypeScript => {
                 self.execute_javascript(code, start_time).await
             }
-            CodeLanguage::Python => {
-                self.execute_with_api("python", code, start_time).await
-            }
-            CodeLanguage::Rust => {
-                self.execute_rust_playground(code, start_time).await
-            }
-            CodeLanguage::Go => {
-                self.execute_go_playground(code, start_time).await
-            }
+            CodeLanguage::Python => self.execute_with_api("python", code, start_time).await,
+            CodeLanguage::Rust => self.execute_rust_playground(code, start_time).await,
+            CodeLanguage::Go => self.execute_go_playground(code, start_time).await,
             _ => {
-                self.execute_with_api(language.as_str(), code, start_time).await
+                self.execute_with_api(language.as_str(), code, start_time)
+                    .await
             }
         }
     }
@@ -141,7 +136,8 @@ impl CodeExecutor {
             .replace('\n', "\\n")
             .replace('\r', "\\r");
 
-        let js_code = format!(r#"
+        let js_code = format!(
+            r#"
             (() => {{
                 try {{
                     let output = [];
@@ -182,18 +178,25 @@ impl CodeExecutor {
                     }};
                 }}
             }})()
-        "#, escaped_code);
+        "#,
+            escaped_code
+        );
 
         match js_sys::eval(&js_code) {
             Ok(result) => {
                 let end_time = js_sys::Date::now();
                 let success = js_sys::Reflect::get(&result, &"success".into())
-                    .unwrap().as_bool().unwrap_or(false);
+                    .unwrap()
+                    .as_bool()
+                    .unwrap_or(false);
                 let output = js_sys::Reflect::get(&result, &"output".into())
-                    .unwrap().as_string().unwrap_or_default();
+                    .unwrap()
+                    .as_string()
+                    .unwrap_or_default();
                 let error = js_sys::Reflect::get(&result, &"error".into())
-                    .unwrap().as_string();
-                
+                    .unwrap()
+                    .as_string();
+
                 ExecutionResult {
                     success,
                     output,
@@ -206,7 +209,7 @@ impl CodeExecutor {
                 output: String::new(),
                 error: Some("JavaScript execution failed".to_string()),
                 execution_time: Some((js_sys::Date::now() - start_time) as u32),
-            }
+            },
         }
     }
 
@@ -218,7 +221,8 @@ impl CodeExecutor {
             .replace('\n', "\\n")
             .replace('\r', "\\r");
 
-        let js_code = format!(r#"
+        let js_code = format!(
+            r#"
             (async () => {{
                 try {{
                     console.log('🦀 Executing Rust code on playground...');
@@ -256,14 +260,17 @@ impl CodeExecutor {
                     }};
                 }}
             }})()
-        "#, escaped_code);
+        "#,
+            escaped_code
+        );
 
         self.execute_js_promise(js_code, start_time).await
     }
 
     #[cfg(feature = "hydrate")]
     async fn execute_go_playground(&self, code: &str, start_time: f64) -> ExecutionResult {
-        let js_code = format!(r#"
+        let js_code = format!(
+            r#"
             (async () => {{
                 try {{
                     console.log('🐹 Executing Go code on playground...');
@@ -309,20 +316,28 @@ impl CodeExecutor {
                     }};
                 }}
             }})()
-        "#, code);
+        "#,
+            code
+        );
 
         self.execute_js_promise(js_code, start_time).await
     }
 
     #[cfg(feature = "hydrate")]
-    async fn execute_with_api(&self, language: &str, code: &str, start_time: f64) -> ExecutionResult {
+    async fn execute_with_api(
+        &self,
+        language: &str,
+        code: &str,
+        start_time: f64,
+    ) -> ExecutionResult {
         let escaped_code = code
             .replace('\\', "\\\\")
             .replace('"', "\\\"")
             .replace('\n', "\\n")
             .replace('\r', "\\r");
 
-        let js_code = format!(r#"
+        let js_code = format!(
+            r#"
             (async () => {{
                 try {{
                     console.log('⚡ Executing {} code with multiple APIs...', '{}');
@@ -447,7 +462,7 @@ sys.stderr = StringIO()
                     }};
                 }}
             }})()
-        "#, 
+        "#,
             language,
             language,
             language,
@@ -471,12 +486,17 @@ sys.stderr = StringIO()
                     Ok(result) => {
                         let end_time = js_sys::Date::now();
                         let success = js_sys::Reflect::get(&result, &"success".into())
-                            .unwrap().as_bool().unwrap_or(false);
+                            .unwrap()
+                            .as_bool()
+                            .unwrap_or(false);
                         let output = js_sys::Reflect::get(&result, &"output".into())
-                            .unwrap().as_string().unwrap_or_default();
+                            .unwrap()
+                            .as_string()
+                            .unwrap_or_default();
                         let error = js_sys::Reflect::get(&result, &"error".into())
-                            .unwrap().as_string();
-                        
+                            .unwrap()
+                            .as_string();
+
                         ExecutionResult {
                             success,
                             output,
@@ -489,7 +509,7 @@ sys.stderr = StringIO()
                         output: String::new(),
                         error: Some("Promise execution failed".to_string()),
                         execution_time: Some((js_sys::Date::now() - start_time) as u32),
-                    }
+                    },
                 }
             }
             Err(_) => ExecutionResult {
@@ -497,7 +517,7 @@ sys.stderr = StringIO()
                 output: String::new(),
                 error: Some("Failed to initialize execution".to_string()),
                 execution_time: Some((js_sys::Date::now() - start_time) as u32),
-            }
+            },
         }
     }
 }

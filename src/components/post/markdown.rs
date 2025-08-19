@@ -1,20 +1,20 @@
-use leptos::*;
-use pulldown_cmark::{html, CowStr, Event, Options, Parser, Tag, CodeBlockKind};
 use super::code::CodeRunner;
+use leptos::*;
+use pulldown_cmark::{html, CodeBlockKind, CowStr, Event, Options, Parser, Tag};
 
 fn resolve_asset_url(url: &str, base_path: Option<&str>) -> String {
     // If URL is already absolute (starts with http, https, or /), return as-is
     if url.starts_with("http://") || url.starts_with("https://") || url.starts_with("/") {
         return url.to_string();
     }
-    
+
     // Handle relative URLs - now content is at root level and served via /assets/
     match base_path {
         Some(_base) => {
             // Since all posts are now in content/ root, relative paths are relative to content/
             format!("/assets/{}", url)
         }
-        None => format!("/assets/{}", url)
+        None => format!("/assets/{}", url),
     }
 }
 
@@ -28,9 +28,14 @@ pub fn parse_markdown_elements(content: &str) -> Vec<MarkdownElement> {
     parse_markdown_elements_with_base(content, None)
 }
 
-pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>) -> Vec<MarkdownElement> {
+pub fn parse_markdown_elements_with_base(
+    content: &str,
+    base_path: Option<&str>,
+) -> Vec<MarkdownElement> {
     if content.trim().is_empty() {
-        return vec![MarkdownElement::Html("<p>No content available.</p>".to_string())];
+        return vec![MarkdownElement::Html(
+            "<p>No content available.</p>".to_string(),
+        )];
     }
 
     let mut options = Options::empty();
@@ -65,7 +70,7 @@ pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>)
                     }
                     current_html.clear();
                 }
-                
+
                 in_code_block = true;
                 code_block_lang = lang.to_string();
                 code_block_content.clear();
@@ -77,7 +82,7 @@ pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>)
             }
             Event::End(Tag::CodeBlock(_)) if in_code_block => {
                 in_code_block = false;
-                
+
                 // Add code block as separate element
                 elements.push(MarkdownElement::CodeBlock {
                     code: code_block_content.clone(),
@@ -88,7 +93,7 @@ pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>)
             // Handle images and videos
             Event::Start(Tag::Image(link_type, url, title)) => {
                 let resolved_url = resolve_asset_url(url, base_path);
-                
+
                 // Convert image tags with .mp4/.webm extensions to video tags
                 if url.ends_with(".mp4") || url.ends_with(".webm") || url.ends_with(".mov") {
                     let video_html = format!(
@@ -109,7 +114,11 @@ pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>)
                     continue;
                 } else {
                     // Handle regular images with resolved URLs
-                    events.push(Event::Start(Tag::Image(link_type.clone(), CowStr::from(resolved_url), title.clone())));
+                    events.push(Event::Start(Tag::Image(
+                        link_type.clone(),
+                        CowStr::from(resolved_url),
+                        title.clone(),
+                    )));
                     continue;
                 }
             }
@@ -138,7 +147,7 @@ pub fn parse_markdown_elements_with_base(content: &str, base_path: Option<&str>)
 pub fn render_markdown(content: &str) -> String {
     let elements = parse_markdown_elements(content);
     let mut html_output = String::new();
-    
+
     for element in elements {
         match element {
             MarkdownElement::Html(html) => {
@@ -154,7 +163,7 @@ pub fn render_markdown(content: &str) -> String {
             }
         }
     }
-    
+
     html_output
 }
 
@@ -162,7 +171,9 @@ pub fn render_markdown(content: &str) -> String {
 pub fn Markdown(content: String, #[prop(optional)] base_path: Option<String>) -> impl IntoView {
     let elements = create_memo(move |_| {
         if content.is_empty() {
-            vec![MarkdownElement::Html("<p>No content available.</p>".to_string())]
+            vec![MarkdownElement::Html(
+                "<p>No content available.</p>".to_string(),
+            )]
         } else {
             parse_markdown_elements_with_base(&content, base_path.as_deref())
         }
@@ -175,7 +186,7 @@ pub fn Markdown(content: String, #[prop(optional)] base_path: Option<String>) ->
                     MarkdownElement::Html(html) => {
                         // Check if this contains ASCII art or is a pre tag with ASCII art
                         let is_ascii_art = html.contains("██") || html.contains("╗") || html.contains("╔") || html.contains("╚") || html.contains("═");
-                        
+
                         if is_ascii_art {
                             // If it's already wrapped in a pre tag, add transparent background styles
                             let styled_html = if html.contains("<pre>") {
@@ -185,7 +196,7 @@ pub fn Markdown(content: String, #[prop(optional)] base_path: Option<String>) ->
                                 let formatted = html.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n");
                                 format!(r#"<pre style="background: transparent !important; border: none !important; padding: 0 !important;">{}</pre>"#, formatted)
                             };
-                            
+
                             view! {
                                 <div class="flex justify-center font-mono" inner_html=styled_html></div>
                             }.into_view()
