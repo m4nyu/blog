@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "cargo leptos watch",
     "build": "cargo leptos build --release",
-    "css:build": "tailwindcss -i ./input.css -o ./target/site/pkg/tailwind_actix.css --watch",
-    "css:prod": "tailwindcss -i ./input.css -o ./target/site/pkg/tailwind_actix.css --minify",
+    "css:build": "tailwindcss -i ./src/styles/global.css -o ./target/site/pkg/tailwind_actix.css --watch",
+    "css:prod": "tailwindcss -i ./src/styles/global.css -o ./target/site/pkg/tailwind_actix.css --minify",
     "format": "bun run format:frontend && bun run format:rust",
     "format:frontend": "biome format --write .",
     "format:rust": "cargo fmt",
@@ -23,19 +23,13 @@
     "check": "biome check --write . && cargo fmt && cargo clippy --all-targets --all-features",
     "check:ci": "biome ci . && cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings",
     "install:clean": "rm -rf node_modules bun.lockb && bun install",
-    "typecheck": "tsc --noEmit",
     "test": "cargo test",
     "test:watch": "cargo watch -x test",
     "audit": "cargo audit"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "postcss-cli": "^11.0.0",
-    "postcss-import": "^16.0.0",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.0.0"
+    "tailwindcss": "^4.0.0"
   },
   "engines": {
     "bun": ">=1.0.0"
