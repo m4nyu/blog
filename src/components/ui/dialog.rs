@@ -89,7 +89,7 @@ pub fn Dialog(
                                         min="50"
                                         max="500"
                                         step="50"
-                                        class="w-full"
+                                        class="w-full range-slider"
                                         prop:value=move || animation_speed.get().to_string()
                                         on:input=handle_speed_change
                                     />
@@ -114,7 +114,7 @@ pub fn Dialog(
                                         min="1"
                                         max="25"
                                         step="1"
-                                        class="w-full"
+                                        class="w-full range-slider"
                                         prop:value=move || (population_density.get() * 100.0).round().to_string()
                                         on:input=handle_density_change
                                         on:change=handle_density_change
