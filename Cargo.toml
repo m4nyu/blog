@@ -2,6 +2,11 @@
 name = "tailwind"
 version = "0.1.0"
 edition = "2021"
+description = "A fast, modern blog built with Rust and Leptos"
+license = "MIT"
+repository = "https://github.com/m4nyu/blog"
+keywords = ["blog", "leptos", "rust", "wasm", "web"]
+categories = ["web-programming", "wasm"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -64,6 +69,79 @@ codegen-units = 1
 lto = true
 opt-level = 'z'
 
+# Linting configuration
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+# Allow some pedantic lints that are too noisy
+missing_errors_doc = "allow"
+missing_panics_doc = "allow" 
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+similar_names = "allow"
+too_many_lines = "allow"
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+redundant_else = "allow"
+unnested_or_patterns = "allow"
+needless_raw_string_hashes = "allow"
+multiple_crate_versions = "allow"
+ignored_unit_patterns = "allow"
+match_same_arms = "allow"
+clone_on_copy = "allow"
+pub_underscore_fields = "allow"
+used_underscore_binding = "allow"
+redundant_closure_for_method_calls = "allow"
+redundant_clone = "allow"
+wildcard_imports = "allow"
+no_effect_underscore_binding = "allow"
+upper_case_acronyms = "allow"
+derive_partial_eq_without_eq = "allow"
+should_implement_trait = "allow"
+unnecessary_wraps = "allow"
+unused_self = "allow"
+missing_const_for_fn = "allow"
+future_not_send = "allow"
+uninlined_format_args = "allow"
+option_if_let_else = "allow"
+needless_pass_by_value = "allow"
+unused_async = "allow"
+unsafe_derive_deserialize = "allow"
+map_unwrap_or = "allow"
+if_not_else = "allow"
+needless_collect = "allow"
+cast_lossless = "allow"
+collapsible_match = "allow"
+suboptimal_flops = "allow"
+let_unit_value = "allow"
+equatable_if_let = "allow"
+redundant_pattern_matching = "allow"
+single_char_pattern = "allow"
+iter_with_drain = "allow"
+branches_sharing_code = "allow"
+format_push_string = "allow"
+unused_enumerate_index = "allow"
+useless_conversion = "allow"
+unused_io_amount = "allow"
+cast_possible_wrap = "allow"
+swap_ptr_to_ref = "allow"
+explicit_iter_loop = "allow"
+manual_clamp = "allow"
+mut_range_bound = "allow"
+use_self = "allow"
+float_cmp = "allow"
+incompatible_msrv = "allow"
+significant_drop_tightening = "allow"
+trivially_copy_pass_by_ref = "allow"
+derivable_impls = "allow"
+literal_string_with_formatting_args = "allow"
+
+[lints.rust]
+rust_2018_idioms = "warn"
+
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   
 output-name = "tailwind_actix"
@@ -75,7 +153,7 @@ site-pkg-dir = "pkg"
 # The tailwind input file.
 #
 # Optional, Activates the tailwind build
-tailwind-input-file = "input.css"
+tailwind-input-file = "src/styles/global.css"
 assets-dir = "public"
 # The IP and port (ex: 127.0.0.1:3000) where the server serves the content. Use it in your server setup.
 site-addr = "127.0.0.1:4002"

@@ -1,5 +1,5 @@
-use leptos::*;
 use super::{CodeExecutor, CodeLanguage, ExecutionResult};
+use leptos::*;
 
 #[cfg(feature = "hydrate")]
 use gloo_timers::callback::Timeout;
@@ -19,17 +19,20 @@ pub fn CodeRunner(
     let language_clone = language.clone();
     let show_copy = if show_copy { show_copy } else { true };
     let show_run = if show_run { show_run } else { true };
-    
+
     let code_lang = CodeLanguage::from_str(&language);
-    let is_executable = code_lang.as_ref().map(|l| l.is_web_executable()).unwrap_or(false);
-    
+    let is_executable = code_lang
+        .as_ref()
+        .map(|l| l.is_web_executable())
+        .unwrap_or(false);
+
     let execution_result = create_rw_signal::<Option<ExecutionResult>>(None);
     let is_executing = create_rw_signal(false);
     let show_output = create_rw_signal(false);
     let copy_success = create_rw_signal(false);
-    
+
     let code_id = format!("code-runner-{}", rand::random::<u32>());
-    
+
     // Use create_effect to run highlighting after hydration
     #[cfg(feature = "hydrate")]
     {
@@ -53,28 +56,30 @@ pub fn CodeRunner(
                          }} \
                      }} else {{ \
                          console.log('Effect - Prism not available'); \
-                     }}", 
+                     }}",
                     id_clone, id_clone, id_clone
                 ));
-            }).forget();
+            })
+            .forget();
         });
     }
-    
-    
+
     let copy_code = {
         let _code_copy = code_clone.clone();
         move |_| {
             #[cfg(feature = "hydrate")]
             {
                 copy_success.set(true);
-                
+
                 // Reset copy success state after 2 seconds
                 Timeout::new(2000, move || {
                     copy_success.set(false);
-                }).forget();
-                
+                })
+                .forget();
+
                 // Fallback copy method that works in all browsers
-                let _ = js_sys::eval(&format!(r#"
+                let _ = js_sys::eval(&format!(
+                    r#"
                     try {{
                         if (navigator.clipboard && window.isSecureContext) {{
                             navigator.clipboard.writeText(`{}`).then(() => {{
@@ -102,15 +107,15 @@ pub fn CodeRunner(
                     }} catch (e) {{
                         console.error('Failed to copy code:', e);
                     }}
-                "#, 
-                _code_copy.replace('`', "\\`").replace('\\', "\\\\"),
-                _code_copy.replace('`', "\\`").replace('\\', "\\\\"),
-                _code_copy.replace('`', "\\`").replace('\\', "\\\\")
+                "#,
+                    _code_copy.replace('`', "\\`").replace('\\', "\\\\"),
+                    _code_copy.replace('`', "\\`").replace('\\', "\\\\"),
+                    _code_copy.replace('`', "\\`").replace('\\', "\\\\")
                 ));
             }
         }
     };
-    
+
     let run_code = {
         let code_run = code_clone.clone();
         move |_| {
@@ -119,11 +124,11 @@ pub fn CodeRunner(
                     is_executing.set(true);
                     show_output.set(true);
                     execution_result.set(None);
-                    
+
                     let executor = CodeExecutor::default();
                     let code_execute = code_run.clone();
                     let lang_clone = lang.clone();
-                    
+
                     spawn_local(async move {
                         let result = executor.execute(lang_clone, &code_execute).await;
                         execution_result.set(Some(result));
@@ -137,16 +142,16 @@ pub fn CodeRunner(
     view! {
         <div class=format!("code-runner-container relative group my-6 sm:my-7 md:my-8 {}", class.unwrap_or_default())>
             // Code block
-            <pre 
-                class="bg-muted border-2 border-border p-3 sm:p-4 md:p-6 overflow-x-auto relative font-mono text-sm sm:text-base leading-relaxed whitespace-pre-wrap" 
+            <pre
+                class="bg-muted border-2 border-border p-3 sm:p-4 md:p-6 overflow-x-auto relative font-mono text-sm sm:text-base leading-relaxed whitespace-pre-wrap"
                 id=code_id.clone()
             >
                 // Action buttons only - positioned at top right, visible on hover
                 <div class="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {if show_copy {
                         view! {
-                            <button 
-                                class="code-btn" 
+                            <button
+                                class="code-btn"
                                 title=move || if copy_success.get() { "Copied!" } else { "Copy code" }
                                 on:click=copy_code
                             >
@@ -168,11 +173,11 @@ pub fn CodeRunner(
                     } else {
                         view! { <div></div> }.into_view()
                     }}
-                    
+
                     {if show_run && is_executable {
                         view! {
-                            <button 
-                                class="code-btn" 
+                            <button
+                                class="code-btn"
                                 title=move || {
                                     if is_executing.get() {
                                         "Executing..."
@@ -213,8 +218,8 @@ pub fn CodeRunner(
                         }.into_view()
                     } else if show_run {
                         view! {
-                            <button 
-                                class="code-btn opacity-50 cursor-not-allowed" 
+                            <button
+                                class="code-btn opacity-50 cursor-not-allowed"
                                 title="Execution not supported in browser"
                                 disabled=true
                             >
@@ -227,10 +232,10 @@ pub fn CodeRunner(
                         view! { <div></div> }.into_view()
                     }}
                 </div>
-                
+
                 // Code content
                 <code class=format!("language-{}", language_clone)>{code}</code>
-                
+
                 // Console output - minimal and clean
                 {move || if show_output.get() {
                     view! {
@@ -278,7 +283,7 @@ pub fn CodeRunner(
                                                 } else {
                                                     view! { <div></div> }.into_view()
                                                 }}
-                                                
+
                                                 {if let Some(error) = &result.error {
                                                     view! {
                                                         <div class="text-red-400 leading-relaxed mt-1">
@@ -288,7 +293,7 @@ pub fn CodeRunner(
                                                 } else {
                                                     view! { <div></div> }.into_view()
                                                 }}
-                                                
+
                                                 {if result.success && result.error.is_none() && result.output.is_empty() {
                                                     view! {
                                                         <div class="text-muted-foreground opacity-50 text-xs mt-1">

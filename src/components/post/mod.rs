@@ -5,8 +5,8 @@ pub mod markdown;
 pub mod types;
 
 // Re-export everything from types and interactions for convenience
-pub use types::*;
 pub use interactions::*;
+pub use types::*;
 
 // Re-export server functions conditionally
 #[cfg(feature = "ssr")]

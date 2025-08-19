@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      
+      - name: Install JS dependencies
+        run: bun install
+      
+      - name: Install Leptos CLI
+        run: cargo install cargo-leptos
+      
+      - name: Build release
+        run: cargo leptos build --release
+      
+      - name: Create release package
+        run: |
+          mkdir -p release-package/target/release
+          mkdir -p release-package/target/site
+          cp -r target/release/* release-package/target/release/ || true
+          cp -r target/site/* release-package/target/site/ || true
+          cp README.md LICENSE Cargo.toml release-package/
+          tar -czf blog-release.tar.gz -C release-package .
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./blog-release.tar.gz
+          asset_name: blog-release.tar.gz
+          asset_content_type: application/gzip

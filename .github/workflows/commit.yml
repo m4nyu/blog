@@ -1,0 +1,49 @@
+name: Commit Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate-commits:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate commit messages
+        run: |
+          # Check conventional commits format
+          commits=$(git rev-list --reverse HEAD..origin/${{ github.base_ref }})
+          for commit in $commits; do
+            message=$(git log --format=%B -n 1 $commit)
+            echo "Checking commit: $commit"
+            echo "Message: $message"
+            # Basic check for conventional commit format
+            if ! echo "$message" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf)(\(.+\))?: .+'; then
+              echo "❌ Commit $commit does not follow conventional commits format"
+              echo "Expected format: type(scope): description"
+              exit 1
+            else
+              echo "✅ Commit $commit follows conventional commits format"
+            fi
+          done
+
+  pre-commit-checks:
+    name: Pre-commit Quality Checks
+    runs-on: ubuntu-latest
+    needs: [validate-commits]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install
+      - name: Run all quality checks
+        run: bun run check
