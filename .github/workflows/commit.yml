@@ -46,10 +46,4 @@ jobs:
       - name: Install dependencies
         run: bun install
       - name: Run all quality checks
-        run: |
-          echo "🔍 Running Biome checks..."
-          bun run check:ci
-          echo "🦀 Running Rust formatting check..."
-          cargo fmt --check
-          echo "🦀 Running Rust linting..."
-          cargo clippy --all-targets --all-features -- -D warnings
+        run: bun run check
