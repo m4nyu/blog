@@ -151,8 +151,6 @@ pub fn App() -> impl IntoView {
         <Title text="blog"/>
         <Meta name="description" content="A blog built with Leptos and Rust"/>
 
-        // Load Prism.js CSS theme
-        <Link rel="stylesheet" href="/prism.css"/>
 
         // Load Prism with autoloader only
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
