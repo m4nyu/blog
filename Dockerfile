@@ -10,7 +10,7 @@ RUN apt-get update -y \
 
 # Install cargo-leptos and wasm target
 RUN rustup target add wasm32-unknown-unknown
-RUN wget -qO- https://github.com/leptos-rs/cargo-leptos/releases/latest/download/cargo-leptos-linux.tar.gz | tar -xzf- -C /usr/local/cargo/bin
+RUN cargo install cargo-leptos --locked
 
 # Install Node.js and Tailwind CSS
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
