@@ -219,5 +219,15 @@ export const vcnId = vcn.id;
 export const subnetId = subnet.id;
 export const websiteUrl = pulumi.interpolate`http://${instance.publicIp}`;
 
-// Log outputs for debugging
-pulumi.log.info(`Instance will be created with ID: ${instance.id}`);
+// Use exported values to prevent unused warnings while logging deployment info
+pulumi.all([instanceId, publicIp, privateIp, vcnId, subnetId, websiteUrl]).apply(
+    ([instId, pubIp, privIp, vId, sId, url]) => {
+        pulumi.log.info(`Deployment Details:
+- Instance ID: ${instId}
+- Public IP: ${pubIp}
+- Private IP: ${privIp}
+- VCN ID: ${vId}
+- Subnet ID: ${sId}
+- Website URL: ${url}`);
+    }
+);
