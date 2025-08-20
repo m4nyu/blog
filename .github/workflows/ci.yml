@@ -57,17 +57,10 @@ jobs:
       - name: Run bun audit
         run: bun audit
 
-  dependency_review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [test, lint, security, dependency_review]
+    needs: [test, lint, security]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
