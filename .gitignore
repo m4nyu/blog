@@ -47,3 +47,6 @@ build/
 .env
 .env.local
 .env.*.local
+/target
+.shuttle*
+Secrets*.toml
