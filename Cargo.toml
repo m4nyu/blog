@@ -41,6 +41,8 @@ js-sys = { version = "0.3", optional = true }
 # dependencies for server (enable when ssr set)
 actix-files = { version = "0.6.6", optional = true }
 actix-web = { version = "4.8", features = ["macros"], optional = true }
+shuttle-actix-web = { version = "0.56", optional = true }
+shuttle-runtime = { version = "0.56", optional = true }
 
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:wasm-bindgen", "dep:console_error_panic_hook", "dep:gloo-timers", "dep:web-sys", "dep:js-sys", "dep:futures", "dep:wasm-bindgen-futures", "dep:gloo-utils"]
@@ -52,6 +54,8 @@ ssr = [
   "dep:actix-web",
   "dep:actix-files",
   "dep:tokio",
+  "dep:shuttle-actix-web",
+  "dep:shuttle-runtime",
 ]
 
 [package.metadata.cargo-all-features]
