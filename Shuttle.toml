@@ -1,2 +1,5 @@
 name = "blog"
 project-id = "proj_01K338M2Z1N7KW3DJR6GYE0S3T"
+
+[build]
+assets = ["target/site", "posts"]
