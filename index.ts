@@ -1,292 +1,351 @@
-import * as oci from "@pulumi/oci";
+import * as aws from "@pulumi/aws";
+import * as cloudflare from "@pulumi/cloudflare";
 import * as pulumi from "@pulumi/pulumi";
-import * as tls from "@pulumi/tls";
 
 // Configuration
 const config = new pulumi.Config("blog");
-const domain = config.get("domain") || "m4nuel.blog";
-const ociConfig = new pulumi.Config("oci");
+const domain = config.get("domain");
 
-// Get the list of availability domains
-const availabilityDomains = oci.identity.getAvailabilityDomains({
-    compartmentId: ociConfig.require("tenancyOcid"),
+// AWS Providers for different regions
+const uswest = new aws.Provider("uswest", {
+  region: "us-west-2",
 });
 
-// Create a VCN (Virtual Cloud Network)
-const vcn = new oci.core.Vcn("blog-vcn", {
-    cidrBlocks: ["10.0.0.0/16"],
-    compartmentId: ociConfig.require("tenancyOcid"),
-    displayName: "Blog VCN",
-    dnsLabel: "blogvcn",
+const euwest = new aws.Provider("euwest", {
+  region: "eu-west-1",
 });
 
-// Create an Internet Gateway
-const internetGateway = new oci.core.InternetGateway("blog-igw", {
-    compartmentId: ociConfig.require("tenancyOcid"),
-    vcnId: vcn.id,
-    displayName: "Blog Internet Gateway",
-    enabled: true,
-});
+// ===== US WEST RESOURCES =====
 
-// Create a Route Table
-const routeTable = new oci.core.RouteTable("blog-rt", {
-    compartmentId: ociConfig.require("tenancyOcid"),
-    vcnId: vcn.id,
-    displayName: "Blog Route Table",
-    routeRules: [{
-        destinationTypeRaw: "CIDR_BLOCK",
-        destination: "0.0.0.0/0",
-        networkEntityId: internetGateway.id,
-    }],
-});
-
-// Create a Public Subnet
-const publicSubnet = new oci.core.Subnet("blog-public-subnet", {
-    cidrBlock: "10.0.1.0/24",
-    compartmentId: ociConfig.require("tenancyOcid"),
-    vcnId: vcn.id,
-    displayName: "Blog Public Subnet",
-    dnsLabel: "blogpub",
-    routeTableId: routeTable.id,
-    securityListIds: [],
-    prohibitPublicIpOnVnic: false,
-});
-
-// Create a Security List for the subnet
-const securityList = new oci.core.SecurityList("blog-security-list", {
-    compartmentId: ociConfig.require("tenancyOcid"),
-    vcnId: vcn.id,
-    displayName: "Blog Security List",
-    egressSecurityRules: [{
-        destination: "0.0.0.0/0",
-        protocol: "all",
-        stateless: false,
-    }],
-    ingressSecurityRules: [
-        // Allow SSH
-        {
-            source: "0.0.0.0/0",
-            protocol: "6", // TCP
-            stateless: false,
-            tcpOptions: {
-                min: 22,
-                max: 22,
-            },
-        },
-        // Allow HTTP
-        {
-            source: "0.0.0.0/0",
-            protocol: "6", // TCP
-            stateless: false,
-            tcpOptions: {
-                min: 80,
-                max: 80,
-            },
-        },
-        // Allow HTTPS
-        {
-            source: "0.0.0.0/0",
-            protocol: "6", // TCP
-            stateless: false,
-            tcpOptions: {
-                min: 443,
-                max: 443,
-            },
-        },
-        // Allow Leptos app port
-        {
-            source: "0.0.0.0/0",
-            protocol: "6", // TCP
-            stateless: false,
-            tcpOptions: {
-                min: 4002,
-                max: 4002,
-            },
-        },
-    ],
-});
-
-// Update subnet to use the security list
-const subnetWithSecurity = new oci.core.Subnet("blog-subnet-with-security", {
-    cidrBlock: "10.0.2.0/24",
-    compartmentId: ociConfig.require("tenancyOcid"),
-    vcnId: vcn.id,
-    displayName: "Blog Subnet",
-    dnsLabel: "blogsub",
-    routeTableId: routeTable.id,
-    securityListIds: [securityList.id],
-    prohibitPublicIpOnVnic: false,
-});
-
-// Get the Ubuntu 22.04 image for ARM (Ampere A1) - Always Free tier
-const ubuntuImage = oci.core.getImages({
-    compartmentId: ociConfig.require("tenancyOcid"),
-    operatingSystem: "Canonical Ubuntu",
-    operatingSystemVersion: "22.04",
-    shape: "VM.Standard.A1.Flex",
-    sortBy: "TIMECREATED",
-    sortOrder: "DESC",
-});
-
-// Create an SSH key pair for instance access
-const sshKeyPair = new tls.PrivateKey("blog-ssh-key", {
-    algorithm: "RSA",
-    rsaBits: 2048,
-});
-
-// Cloud-init script to set up the Leptos blog
-const cloudInitScript = `#!/bin/bash
-set -e
-
-# Update system
-apt-get update
-apt-get upgrade -y
-
-# Install essential packages
-apt-get install -y \
-    curl \
-    git \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    nginx \
-    certbot \
-    python3-certbot-nginx \
-    ufw
-
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source $HOME/.cargo/env
-
-# Add wasm target
-rustup target add wasm32-unknown-unknown
-
-# Install cargo-leptos
-cargo install cargo-leptos
-
-# Clone the blog repository (you'll need to update this with your repo)
-cd /opt
-git clone https://github.com/m4nyu/blog.git
-cd blog
-
-# Build the application
-cargo leptos build --release
-
-# Create systemd service for the blog
-cat > /etc/systemd/system/blog.service << 'EOF'
-[Unit]
-Description=Leptos Blog
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/opt/blog
-Environment="LEPTOS_SITE_ADDR=127.0.0.1:4002"
-ExecStart=/opt/blog/target/release/tailwind
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Configure Nginx as reverse proxy
-cat > /etc/nginx/sites-available/blog << 'EOF'
-server {
-    listen 80;
-    listen [::]:80;
-    server_name ${domain};
-
-    location / {
-        proxy_pass http://127.0.0.1:4002;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-EOF
-
-# Enable the site
-ln -s /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-
-# Configure firewall
-ufw allow 22/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw --force enable
-
-# Start services
-systemctl daemon-reload
-systemctl enable blog
-systemctl start blog
-systemctl restart nginx
-
-echo "Blog deployment complete!"
-`;
-
-// Create a Compute Instance (Free tier: VM.Standard.A1.Flex with 1 OCPU and 6GB RAM)
-const blogInstance = new oci.core.Instance("blog-instance", {
-    availabilityDomain: availabilityDomains.then(ads => ads.availabilityDomains[0].name),
-    compartmentId: ociConfig.require("tenancyOcid"),
-    shape: "VM.Standard.A1.Flex",
-    shapeConfig: {
-        ocpus: 1,
-        memoryInGbs: 6,
-    },
-    sourceDetails: {
-        sourceType: "image",
-        sourceId: ubuntuImage.then(imgs => imgs.images[0].id),
-    },
-    createVnicDetails: {
-        assignPublicIp: true,
-        subnetId: subnetWithSecurity.id,
-        displayName: "Blog Instance VNIC",
-    },
-    metadata: {
-        ssh_authorized_keys: sshKeyPair.publicKeyOpenssh,
-        user_data: Buffer.from(cloudInitScript).toString("base64"),
-    },
-    displayName: "Blog Instance",
-    freeformTags: {
-        "Name": "Blog Server",
-        "Environment": "Production",
-    },
-});
-
-// Create a Reserved Public IP
-const publicIp = new oci.core.PublicIp("blog-public-ip", {
-    compartmentId: ociConfig.require("tenancyOcid"),
-    lifetime: "RESERVED",
-    displayName: "Blog Public IP",
-});
-
-// Associate the Reserved IP with the instance
-const privateIp = blogInstance.createVnicDetails.apply(details => 
-    oci.core.getPrivateIps({
-        subnetId: subnetWithSecurity.id,
-    }).then(ips => ips.privateIps[0])
+// S3 Bucket for US West
+const usbucket = new aws.s3.Bucket(
+  "usbucket",
+  {
+    bucket: `${pulumi.getStack()}-blog-uswest`,
+  },
+  { provider: uswest }
 );
 
-// ===== EXPORTS =====
-export const instanceId = blogInstance.id;
-export const instancePublicIp = blogInstance.publicIp;
-export const reservedPublicIp = publicIp.ipAddress;
-export const sshPrivateKey = sshKeyPair.privateKeyPem;
-export const sshCommand = pulumi.interpolate`ssh -i blog-key.pem ubuntu@${blogInstance.publicIp}`;
-export const websiteUrl = pulumi.interpolate`http://${blogInstance.publicIp}`;
-export const domain = domain;
+// Website configuration for US West bucket
+const uswebsite = new aws.s3.BucketWebsiteConfigurationV2(
+  "uswebsite",
+  {
+    bucket: usbucket.bucket,
+    indexDocument: {
+      suffix: "index.html",
+    },
+    errorDocument: {
+      key: "index.html",
+    },
+  },
+  { provider: uswest }
+);
 
-// Instructions for DNS setup
-export const dnsInstructions = pulumi.interpolate`
-To complete the setup:
-1. Add an A record in your DNS provider pointing ${domain} to ${blogInstance.publicIp}
-2. SSH into the instance: ${sshCommand}
-3. Run: sudo certbot --nginx -d ${domain} to set up SSL
-`;
+// Public access block for US West
+new aws.s3.BucketPublicAccessBlock(
+  "uspab",
+  {
+    bucket: usbucket.bucket,
+    blockPublicAcls: false,
+    blockPublicPolicy: false,
+    ignorePublicAcls: false,
+    restrictPublicBuckets: false,
+  },
+  { provider: uswest }
+);
+
+// ===== EU WEST RESOURCES =====
+
+// S3 Bucket for EU West
+const eubucket = new aws.s3.Bucket(
+  "eubucket",
+  {
+    bucket: `${pulumi.getStack()}-blog-euwest`,
+  },
+  { provider: euwest }
+);
+
+// Website configuration for EU West bucket
+const euwebsite = new aws.s3.BucketWebsiteConfigurationV2(
+  "euwebsite",
+  {
+    bucket: eubucket.bucket,
+    indexDocument: {
+      suffix: "index.html",
+    },
+    errorDocument: {
+      key: "index.html",
+    },
+  },
+  { provider: euwest }
+);
+
+// Public access block for EU West
+new aws.s3.BucketPublicAccessBlock(
+  "eupab",
+  {
+    bucket: eubucket.bucket,
+    blockPublicAcls: false,
+    blockPublicPolicy: false,
+    ignorePublicAcls: false,
+    restrictPublicBuckets: false,
+  },
+  { provider: euwest }
+);
+
+// ===== CLOUDFRONT DISTRIBUTION =====
+
+// Origin Access Control
+const oac = new aws.cloudfront.OriginAccessControl("oac", {
+  name: `${pulumi.getStack()}-blog-oac`,
+  description: "OAC for blog multi-region",
+  originAccessControlOriginType: "s3",
+  signingBehavior: "always",
+  signingProtocol: "sigv4",
+});
+
+// CloudFront Distribution with multiple origins
+const distribution = new aws.cloudfront.Distribution("distribution", {
+  origins: [
+    // US West Origin
+    {
+      domainName: uswebsite.websiteEndpoint,
+      originId: `S3-US-${usbucket.bucket}`,
+      originAccessControlId: oac.id,
+      customOriginConfig: {
+        httpPort: 80,
+        httpsPort: 443,
+        originProtocolPolicy: "http-only",
+        originSslProtocols: ["TLSv1.2"],
+      },
+    },
+    // EU West Origin
+    {
+      domainName: euwebsite.websiteEndpoint,
+      originId: `S3-EU-${eubucket.bucket}`,
+      originAccessControlId: oac.id,
+      customOriginConfig: {
+        httpPort: 80,
+        httpsPort: 443,
+        originProtocolPolicy: "http-only",
+        originSslProtocols: ["TLSv1.2"],
+      },
+    },
+  ],
+  enabled: true,
+  isIpv6Enabled: true,
+  defaultRootObject: "index.html",
+
+  // Default cache behavior (US West)
+  defaultCacheBehavior: {
+    targetOriginId: pulumi.interpolate`S3-US-${usbucket.bucket}`,
+    viewerProtocolPolicy: "redirect-to-https",
+    allowedMethods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
+    cachedMethods: ["GET", "HEAD"],
+    compress: true,
+    forwardedValues: {
+      queryString: false,
+      cookies: {
+        forward: "none",
+      },
+    },
+    // Use managed caching and security policies
+    cachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad", // CachingOptimized
+    responseHeadersPolicyId: "5cc3b908-e619-4b99-88e5-2cf7f45965bd", // SecurityHeadersPolicy
+  },
+
+  // Custom error responses for SPA routing
+  customErrorResponses: [
+    {
+      errorCode: 404,
+      responseCode: 200,
+      responsePagePath: "/index.html",
+      errorCachingMinTtl: 10,
+    },
+    {
+      errorCode: 403,
+      responseCode: 200,
+      responsePagePath: "/index.html",
+      errorCachingMinTtl: 10,
+    },
+  ],
+
+  // Use all price classes for global distribution
+  priceClass: "PriceClass_All",
+
+  restrictions: {
+    geoRestriction: {
+      restrictionType: "none",
+    },
+  },
+
+  viewerCertificate: domain
+    ? {
+        acmCertificateArn: undefined,
+        cloudfrontDefaultCertificate: false,
+        sslSupportMethod: "sni-only",
+        minimumProtocolVersion: "TLSv1.2_2021",
+      }
+    : {
+        cloudfrontDefaultCertificate: true,
+      },
+});
+
+// Bucket policies for CloudFront access
+new aws.s3.BucketPolicy(
+  "uspolicy",
+  {
+    bucket: usbucket.bucket,
+    policy: pulumi.all([usbucket.arn, distribution.arn]).apply(([bucketArn, distArn]) =>
+      JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Sid: "AllowCloudFrontServicePrincipal",
+            Effect: "Allow",
+            Principal: {
+              Service: "cloudfront.amazonaws.com",
+            },
+            Action: "s3:GetObject",
+            Resource: `${bucketArn}/*`,
+            Condition: {
+              StringEquals: {
+                "AWS:SourceArn": distArn,
+              },
+            },
+          },
+        ],
+      })
+    ),
+  },
+  { provider: uswest }
+);
+
+new aws.s3.BucketPolicy(
+  "eupolicy",
+  {
+    bucket: eubucket.bucket,
+    policy: pulumi.all([eubucket.arn, distribution.arn]).apply(([bucketArn, distArn]) =>
+      JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Sid: "AllowCloudFrontServicePrincipal",
+            Effect: "Allow",
+            Principal: {
+              Service: "cloudfront.amazonaws.com",
+            },
+            Action: "s3:GetObject",
+            Resource: `${bucketArn}/*`,
+            Condition: {
+              StringEquals: {
+                "AWS:SourceArn": distArn,
+              },
+            },
+          },
+        ],
+      })
+    ),
+  },
+  { provider: euwest }
+);
+
+// ===== CLOUDFLARE SECURITY =====
+
+// Cloudflare configuration - requires existing zone
+const cfconfig = new pulumi.Config("cloudflare");
+const zoneid = cfconfig.get("zoneId");
+
+if (domain && zoneid) {
+  // DNS record pointing to CloudFront
+  new cloudflare.Record("dns", {
+    zoneId: zoneid,
+    name: "@",
+    value: distribution.domainName,
+    type: "CNAME",
+    proxied: true,
+  });
+
+  // WAF Rules for security
+  new cloudflare.Ruleset("waf", {
+    zoneId: zoneid,
+    name: "Blog WAF Rules",
+    description: "Web Application Firewall rules for blog security",
+    kind: "zone",
+    phase: "http_request_firewall_custom",
+    rules: [
+      {
+        action: "block",
+        expression:
+          '(http.request.uri.path contains "wp-admin") or (http.request.uri.path contains "phpmyadmin") or (http.request.uri.path contains ".env")',
+        description: "Block common attack paths",
+        enabled: true,
+      },
+      {
+        action: "challenge",
+        expression: "(cf.client.bot) or (cf.threat_score > 14)",
+        description: "Challenge suspicious requests and bots",
+        enabled: true,
+      },
+      {
+        action: "block",
+        expression:
+          '(http.request.uri.query contains "union") or (http.request.uri.query contains "select") or (http.request.uri.query contains "script")',
+        description: "Block SQL injection attempts",
+        enabled: true,
+      },
+    ],
+  });
+
+  // Page Rules for caching and security
+  new cloudflare.PageRule("caching", {
+    zoneId: zoneid,
+    target: `${domain}/pkg/*`,
+    priority: 1,
+    status: "active",
+    actions: {
+      cacheLevel: "cache_everything",
+      securityLevel: "medium",
+      ssl: "strict",
+    },
+  });
+
+  new cloudflare.PageRule("root", {
+    zoneId: zoneid,
+    target: `${domain}/*`,
+    priority: 2,
+    status: "active",
+    actions: {
+      securityLevel: "high",
+      ssl: "strict",
+    },
+  });
+
+  // SSL/TLS and security settings
+  new cloudflare.ZoneSettingsOverride("ssl", {
+    zoneId: zoneid,
+    settings: {
+      ssl: "strict",
+      alwaysUseHttps: "on",
+      minTlsVersion: "1.2",
+      tls13: "on",
+      automaticHttpsRewrites: "on",
+      securityLevel: "high",
+      challengeTtl: 1800,
+      browserCheck: "on",
+      hotlinkProtection: "on",
+      emailObfuscation: "on",
+      serverSideExclude: "on",
+    },
+  });
+}
+
+// ===== EXPORTS =====
+
+export const bucketUSWest = usbucket.bucket;
+export const bucketEUWest = eubucket.bucket;
+export const distributionId = distribution.id;
+export const usEndpoint = uswebsite.websiteEndpoint;
+export const euEndpoint = euwebsite.websiteEndpoint;
+export const websiteUrl = domain ? `https://${domain}` : pulumi.interpolate`https://${distribution.domainName}`;
+export const cloudflareZone = zoneid;

@@ -1,24 +1,15 @@
 name: blog
 runtime: nodejs
-description: A Leptos blog deployed to Oracle Cloud Infrastructure
+description: A Leptos blog deployed to AWS with Cloudflare security
 
 template:
   config:
-    oci:region:
-      description: The primary OCI region to deploy to
-      default: us-phoenix-1
+    aws:region:
+      description: The primary AWS region to deploy to
+      default: us-east-1
     blog:domain:
-      description: Custom domain for the blog
-      default: m4nuel.blog
-    oci:tenancyOcid:
-      description: Oracle Cloud Tenancy OCID
-      secret: true
-    oci:userOcid:
-      description: Oracle Cloud User OCID
-      secret: true
-    oci:privateKey:
-      description: Oracle Cloud API Private Key
-      secret: true
-    oci:fingerprint:
-      description: Oracle Cloud API Key Fingerprint
+      description: Custom domain for the blog (required for Cloudflare)
+      default: ""
+    cloudflare:apiToken:
+      description: Cloudflare API token with Zone and DNS permissions
       secret: true
