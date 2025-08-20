@@ -1,43 +1,34 @@
 #[cfg(feature = "ssr")]
-#[shuttle_runtime::main]
-async fn main(
-) -> shuttle_actix_web::ShuttleActixWeb<impl FnOnce(&mut actix_web::web::ServiceConfig) + Send + Clone + 'static> {
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
     use actix_files::Files;
-    use actix_web::web::ServiceConfig;
     use actix_web::*;
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use tailwind::app::*;
 
-    // Set up basic configuration for Shuttle environment
-    let conf = get_configuration(None).await.unwrap_or_else(|e| {
-        eprintln!("Warning: Failed to get Leptos configuration: {}", e);
-        eprintln!("Using minimal fallback configuration");
-        panic!("Cannot proceed without Leptos configuration");
-    });
-    
+    let conf = get_configuration(None).await.unwrap();
+    let addr = conf.leptos_options.site_addr;
     let routes = generate_route_list(App);
-    let leptos_options = conf.leptos_options;
-    
-    // Use a simple public directory for assets in production
-    let site_root = "/app".to_string();
-    
-    eprintln!("Leptos options: {:?}", leptos_options);
-    eprintln!("Using site root: {}", site_root);
 
-    let config = move |cfg: &mut ServiceConfig| {
-        cfg.app_data(web::Data::new(leptos_options.clone()))
-            .app_data(web::Data::new(routes.clone()))
+    println!("listening on http://{}", &addr);
+
+    HttpServer::new(move || {
+        let leptos_options = &conf.leptos_options;
+        let site_root = &leptos_options.site_root;
+        let routes = &routes;
+
+        App::new()
+            .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
             .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
-            .leptos_routes(leptos_options.clone(), routes.clone(), App)
-            .service(Files::new("/assets/", "/app/posts/").show_files_listing())
-            .service(Files::new("/pkg/", "/app/pkg/").show_files_listing())
-            .route("/{filename:.*}", web::get().to(|req: HttpRequest| async move {
-                HttpResponse::Ok().body("Hello from Shuttle!")
-            }));
-    };
-
-    Ok(config.into())
+            .service(Files::new("/assets/", "posts/").show_files_listing())
+            .service(Files::new("/", site_root))
+            .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "no-cache")))
+            .wrap(middleware::Compress::default())
+    })
+    .bind(&addr)?
+    .run()
+    .await
 }
 
 #[cfg(not(feature = "ssr"))]
