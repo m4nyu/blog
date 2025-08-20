@@ -1,12 +1,8 @@
 import * as oci from "@pulumi/oci";
 import * as pulumi from "@pulumi/pulumi";
 
-// Get configuration
-const config = new pulumi.Config();
-const ociConfig = new pulumi.Config("oci");
-
 // Get the root compartment ID (tenancy OCID)
-const tenancyId = ociConfig.require("tenancyOcid");
+const tenancyId = new pulumi.Config("oci").require("tenancyOcid");
 
 // Get availability domains
 const availabilityDomains = oci.identity.getAvailabilityDomains({
@@ -215,9 +211,13 @@ const instance = new oci.core.Instance("blog-instance", {
     },
 });
 
-// Export outputs
+// Export stack outputs for external reference
 export const instanceId = instance.id;
 export const publicIp = instance.publicIp;
 export const privateIp = instance.privateIp;
 export const vcnId = vcn.id;
 export const subnetId = subnet.id;
+export const websiteUrl = pulumi.interpolate`http://${instance.publicIp}`;
+
+// Log outputs for debugging
+pulumi.log.info(`Instance will be created with ID: ${instance.id}`);
