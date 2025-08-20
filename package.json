@@ -9,17 +9,28 @@
     "format": "biome format --write . && cargo fmt",
     "lint": "biome lint --write . && cargo clippy --all-targets --all-features",
     "check": "biome ci . && cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings",
-    "test": "cargo test"
+    "test": "cargo test",
+    "deploy": "bun run build && tsx scripts/deploy.ts",
+    "preview": "bun run build && pulumi preview",
+    "sync": "tsx scripts/sync.ts",
+    "invalidate": "tsx scripts/invalidate.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.0.0",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.3",
+    "tsx": "^4.19.2"
   },
   "engines": {
     "bun": ">=1.0.0"
   },
   "packageManager": "bun@1.2.17",
   "dependencies": {
-    "@tailwindcss/vite": "^4.0.0"
+    "@tailwindcss/vite": "^4.0.0",
+    "@pulumi/pulumi": "^3.143.0",
+    "@pulumi/aws": "^6.61.1",
+    "@pulumi/cloudflare": "^5.44.0",
+    "@pulumi/command": "^1.0.1"
   }
 }

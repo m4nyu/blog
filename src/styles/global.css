@@ -122,7 +122,7 @@
   .range-slider {
     @apply w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer outline-none;
   }
-  
+
   .dark .range-slider {
     @apply bg-gray-400;
   }
