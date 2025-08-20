@@ -35,7 +35,7 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install
-      - name: Run all checks
+      - name: Run all checks (Rust + TypeScript + formatting)
         run: bun run check
 
   build:
