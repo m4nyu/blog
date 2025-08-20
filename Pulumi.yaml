@@ -1,0 +1,15 @@
+name: blog
+runtime: nodejs
+description: A Leptos blog deployed to AWS with Cloudflare security
+
+template:
+  config:
+    aws:region:
+      description: The primary AWS region to deploy to
+      default: us-east-1
+    blog:domain:
+      description: Custom domain for the blog (required for Cloudflare)
+      default: ""
+    cloudflare:apiToken:
+      description: Cloudflare API token with Zone and DNS permissions
+      secret: true
