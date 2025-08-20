@@ -1,0 +1,42 @@
+# Dependency Review Configuration
+# GitHub will use this to customize dependency review checks
+
+# Fail the action if vulnerabilities are found at this level or higher
+fail-on-severity: high
+
+# Fail if any prohibited licenses are found
+fail-on-scopes:
+  - runtime
+  - development
+
+# Allow these licenses
+allow-licenses:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - CC0-1.0
+  - Unlicense
+
+# Deny these licenses
+deny-licenses:
+  - GPL-2.0
+  - GPL-3.0
+  - AGPL-1.0
+  - AGPL-3.0
+  - LGPL-2.0
+  - LGPL-2.1
+  - LGPL-3.0
+
+# Allow dependencies from these GitHub organizations/users
+allow-ghsas: []
+
+# Deny specific GitHub Security Advisories
+deny-ghsas: []
+
+# Comment settings
+comment-summary-in-pr: always
+
+# Maximum number of dependencies to comment on
+comment-summary-max-deps: 50
