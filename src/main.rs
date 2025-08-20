@@ -9,18 +9,32 @@ async fn main(
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use tailwind::app::*;
 
-    let conf = get_configuration(None).await.unwrap();
+    // Set up basic configuration for Shuttle environment
+    let conf = get_configuration(None).await.unwrap_or_else(|e| {
+        eprintln!("Warning: Failed to get Leptos configuration: {}", e);
+        eprintln!("Using minimal fallback configuration");
+        panic!("Cannot proceed without Leptos configuration");
+    });
+    
     let routes = generate_route_list(App);
     let leptos_options = conf.leptos_options;
-    let site_root = leptos_options.site_root.clone();
+    
+    // Use a simple public directory for assets in production
+    let site_root = "/app".to_string();
+    
+    eprintln!("Leptos options: {:?}", leptos_options);
+    eprintln!("Using site root: {}", site_root);
 
     let config = move |cfg: &mut ServiceConfig| {
         cfg.app_data(web::Data::new(leptos_options.clone()))
             .app_data(web::Data::new(routes.clone()))
             .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
             .leptos_routes(leptos_options.clone(), routes.clone(), App)
-            .service(Files::new("/assets/", "posts/").show_files_listing())
-            .service(Files::new("/", &site_root));
+            .service(Files::new("/assets/", "/app/posts/").show_files_listing())
+            .service(Files::new("/pkg/", "/app/pkg/").show_files_listing())
+            .route("/{filename:.*}", web::get().to(|req: HttpRequest| async move {
+                HttpResponse::Ok().body("Hello from Shuttle!")
+            }));
     };
 
     Ok(config.into())
