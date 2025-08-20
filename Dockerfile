@@ -21,11 +21,13 @@ WORKDIR /app
 
 # Copy dependency files
 COPY Cargo.toml Cargo.lock ./
-COPY src/lib.rs src/lib.rs
+
+# Create a dummy src/lib.rs for dependency caching
+RUN mkdir -p src && echo "fn main() {}" > src/lib.rs
 
 # Cache dependencies
 RUN cargo build --release --features ssr
-RUN rm src/lib.rs
+RUN rm -rf src
 
 # Copy source code
 COPY . .
