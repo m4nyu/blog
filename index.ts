@@ -1,20 +1,32 @@
 import * as oci from "@pulumi/oci";
 import * as pulumi from "@pulumi/pulumi";
 
-// Get the root compartment ID (tenancy OCID)
-const tenancyId = new pulumi.Config("oci").require("tenancyOcid");
+// Get configuration
+const config = new pulumi.Config();
+const ociConfig = new pulumi.Config("oci");
+const tenancyId = ociConfig.require("tenancyOcid");
+const region = ociConfig.get("region") || "us-phoenix-1";
 
 // Get availability domains
 const availabilityDomains = oci.identity.getAvailabilityDomains({
     compartmentId: tenancyId,
 });
 
-// Create a VCN (Virtual Cloud Network)
+// Common tags for all resources
+const commonTags = {
+    Project: "m4nuel-blog",
+    Environment: "production",
+    ManagedBy: "pulumi",
+    Owner: "manuel",
+};
+
+// Create VCN (Virtual Cloud Network)
 const vcn = new oci.core.Vcn("blog-vcn", {
     compartmentId: tenancyId,
     cidrBlocks: ["10.0.0.0/16"],
     displayName: "Blog VCN",
     dnsLabel: "blogvcn",
+    freeformTags: commonTags,
 });
 
 // Create Internet Gateway
@@ -23,32 +35,61 @@ const internetGateway = new oci.core.InternetGateway("blog-igw", {
     vcnId: vcn.id,
     displayName: "Blog Internet Gateway",
     enabled: true,
+    freeformTags: commonTags,
 });
 
-// Create Route Table
-const routeTable = new oci.core.RouteTable("blog-rt", {
+// Create NAT Gateway for outbound traffic
+const natGateway = new oci.core.NatGateway("blog-nat", {
     compartmentId: tenancyId,
     vcnId: vcn.id,
-    displayName: "Blog Route Table",
+    displayName: "Blog NAT Gateway",
+    freeformTags: commonTags,
+});
+
+// Create Service Gateway for Oracle services
+const serviceGateway = new oci.core.ServiceGateway("blog-svc-gw", {
+    compartmentId: tenancyId,
+    vcnId: vcn.id,
+    displayName: "Blog Service Gateway",
+    services: [{
+        serviceId: oci.core.getServices({}).then(s => 
+            s.services.find(svc => svc.name.includes("Object Storage"))?.id || ""
+        ),
+    }],
+    freeformTags: commonTags,
+});
+
+// Create Route Table for public subnet
+const publicRouteTable = new oci.core.RouteTable("blog-public-rt", {
+    compartmentId: tenancyId,
+    vcnId: vcn.id,
+    displayName: "Blog Public Route Table",
     routeRules: [{
         destination: "0.0.0.0/0",
         destinationType: "CIDR_BLOCK",
         networkEntityId: internetGateway.id,
     }],
+    freeformTags: commonTags,
 });
 
-// Create Security List
-const securityList = new oci.core.SecurityList("blog-security-list", {
+// Create Security List for web servers
+const webSecurityList = new oci.core.SecurityList("blog-web-sl", {
     compartmentId: tenancyId,
     vcnId: vcn.id,
-    displayName: "Blog Security List",
-    egressSecurityRules: [{
-        destination: "0.0.0.0/0",
-        protocol: "all",
-        stateless: false,
-    }],
+    displayName: "Blog Web Security List",
+    
+    // Egress rules - allow all outbound traffic
+    egressSecurityRules: [
+        {
+            destination: "0.0.0.0/0",
+            protocol: "all",
+            stateless: false,
+        }
+    ],
+    
+    // Ingress rules - restrictive inbound access
     ingressSecurityRules: [
-        // SSH
+        // SSH access
         {
             source: "0.0.0.0/0",
             protocol: "6", // TCP
@@ -57,18 +98,20 @@ const securityList = new oci.core.SecurityList("blog-security-list", {
                 min: 22,
                 max: 22,
             },
+            description: "SSH access",
         },
-        // HTTP
+        // HTTP traffic
         {
-            source: "0.0.0.0/0",
+            source: "0.0.0.0/0", 
             protocol: "6", // TCP
             stateless: false,
             tcpOptions: {
                 min: 80,
                 max: 80,
             },
+            description: "HTTP traffic",
         },
-        // HTTPS
+        // HTTPS traffic
         {
             source: "0.0.0.0/0",
             protocol: "6", // TCP
@@ -77,24 +120,38 @@ const securityList = new oci.core.SecurityList("blog-security-list", {
                 min: 443,
                 max: 443,
             },
+            description: "HTTPS traffic",
+        },
+        // ICMP for ping diagnostics
+        {
+            source: "0.0.0.0/0",
+            protocol: "1", // ICMP
+            stateless: false,
+            icmpOptions: {
+                type: 3,
+                code: 4,
+            },
+            description: "ICMP Path Discovery",
         },
     ],
+    freeformTags: commonTags,
 });
 
-// Create Subnet
-const subnet = new oci.core.Subnet("blog-subnet", {
+// Create public subnet
+const publicSubnet = new oci.core.Subnet("blog-public-subnet", {
     compartmentId: tenancyId,
     vcnId: vcn.id,
-    cidrBlock: "10.0.1.0/24",
-    displayName: "Blog Subnet",
-    dnsLabel: "blogsub",
-    routeTableId: routeTable.id,
-    securityListIds: [securityList.id],
+    cidrBlock: "10.0.2.0/24",
+    displayName: "Blog Public Subnet",
+    dnsLabel: "blogpublic",
+    routeTableId: publicRouteTable.id,
+    securityListIds: [webSecurityList.id],
     prohibitPublicIpOnVnic: false,
+    freeformTags: commonTags,
 });
 
-// Get Ubuntu 22.04 ARM image for Always Free tier
-const images = oci.core.getImages({
+// Get latest Ubuntu 22.04 ARM image for Always Free tier
+const ubuntuImages = oci.core.getImages({
     compartmentId: tenancyId,
     operatingSystem: "Canonical Ubuntu",
     operatingSystemVersion: "22.04",
@@ -103,131 +160,124 @@ const images = oci.core.getImages({
     sortOrder: "DESC",
 });
 
-// Cloud-init script to set up the blog
-const cloudInit = `#!/bin/bash
-set -e
+// Get SSH public key from config
+const sshPublicKey = config.requireSecret("sshPublicKey");
 
-# Update system
-apt-get update && apt-get upgrade -y
+const cloudInitConfig = sshPublicKey.apply(key => `#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - git
+  - curl
 
-# Install dependencies
-apt-get install -y curl git build-essential pkg-config libssl-dev nginx
+ssh_authorized_keys:
+  - ${key}
 
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source /root/.cargo/env
-echo 'source /root/.cargo/env' >> /root/.bashrc
+write_files:
+  - content: |
+      #!/bin/bash
+      set -e
+      
+      echo "Starting deployment script..."
+      
+      # Ensure Docker is running
+      sudo systemctl enable docker
+      sudo systemctl start docker
+      
+      # Clone or update the repository
+      cd /home/ubuntu
+      if [ -d "blog" ]; then
+        cd blog
+        sudo -u ubuntu git pull origin main
+      else
+        sudo -u ubuntu git clone https://github.com/mszedlak/blog.git
+        cd blog
+      fi
+      
+      # Stop existing container if running
+      docker stop blog-container || true
+      docker rm blog-container || true
+      
+      # Build new image
+      docker build -t blog-app .
+      
+      # Run container with proper port mapping
+      docker run -d \
+        --name blog-container \
+        --restart unless-stopped \
+        -p 80:80 \
+        -p 443:443 \
+        blog-app
+      
+      echo "Deployment complete!"
+    path: /home/ubuntu/deploy.sh
+    permissions: '0755'
+    owner: ubuntu:ubuntu
 
-# Add wasm target
-/root/.cargo/bin/rustup target add wasm32-unknown-unknown
+runcmd:
+  - systemctl enable docker
+  - systemctl start docker
+  - usermod -aG docker ubuntu
+  - /home/ubuntu/deploy.sh
+`);
 
-# Install cargo-leptos
-/root/.cargo/bin/cargo install cargo-leptos
-
-# Clone and build the blog
-cd /opt
-git clone https://github.com/m4nyu/blog.git
-cd blog
-/root/.cargo/bin/cargo leptos build --release
-
-# Create systemd service
-cat > /etc/systemd/system/blog.service << 'EOF'
-[Unit]
-Description=Leptos Blog
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/opt/blog
-Environment="LEPTOS_SITE_ADDR=127.0.0.1:3000"
-ExecStart=/opt/blog/target/release/tailwind
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Configure nginx
-cat > /etc/nginx/sites-available/blog << 'EOF'
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-EOF
-
-# Enable site
-rm -f /etc/nginx/sites-enabled/default
-ln -s /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/blog
-
-# Start services
-systemctl daemon-reload
-systemctl enable blog nginx
-systemctl start blog nginx
-
-echo "Blog deployment complete!"
-`;
-
-// Create compute instance using Always Free tier
-const instance = new oci.core.Instance("blog-instance", {
+// Create compute instance
+const blogInstance = new oci.core.Instance("blog-instance", {
     compartmentId: tenancyId,
-    availabilityDomain: availabilityDomains.then(ads => ads.availabilityDomains[0].name),
+    availabilityDomain: availabilityDomains.then(ads => 
+        ads.availabilityDomains[1]?.name || ads.availabilityDomains[0].name
+    ),
     shape: "VM.Standard.A1.Flex",
     shapeConfig: {
         ocpus: 1,
         memoryInGbs: 6,
     },
     sourceDetails: {
-        sourceType: "image",
-        sourceId: images.then(imgs => imgs.images[0].id),
+        sourceType: "image", 
+        sourceId: ubuntuImages.then(imgs => imgs.images[0].id),
         bootVolumeSizeInGbs: "50",
     },
     createVnicDetails: {
-        subnetId: subnet.id,
+        subnetId: publicSubnet.id,
         displayName: "Blog Instance VNIC",
         assignPublicIp: "true",
-        hostnameLabel: "blog",
+        hostnameLabel: "blog-clean",
+        nsgIds: [], // No network security groups for simplicity
     },
     metadata: {
-        user_data: Buffer.from(cloudInit).toString("base64"),
+        "ssh_authorized_keys": sshPublicKey,
+        "user_data": cloudInitConfig.apply(config => Buffer.from(config).toString("base64")),
     },
     displayName: "Blog Instance",
     freeformTags: {
-        Name: "Blog",
-        Environment: "Production",
+        ...commonTags,
+        Name: "blog-server",
+        Role: "webserver",
     },
 });
 
-// Export stack outputs for external reference
-export const instanceId = instance.id;
-export const publicIp = instance.publicIp;
-export const privateIp = instance.privateIp;
+// Export important values
+export const tenancyOcid = tenancyId;
+export const regionName = region;
 export const vcnId = vcn.id;
-export const subnetId = subnet.id;
-export const websiteUrl = pulumi.interpolate`http://${instance.publicIp}`;
+export const subnetId = publicSubnet.id;
+export const instanceId = blogInstance.id;
+export const publicIp = blogInstance.publicIp;
+export const privateIp = blogInstance.privateIp;
+export const websiteUrl = pulumi.interpolate`http://${blogInstance.publicIp}`;
+export const domainUrl = "https://m4nuel.blog";
 
-// Use exported values to prevent unused warnings while logging deployment info
+// Log deployment information
 pulumi.all([instanceId, publicIp, privateIp, vcnId, subnetId, websiteUrl]).apply(
     ([instId, pubIp, privIp, vId, sId, url]) => {
-        pulumi.log.info(`Deployment Details:
+        pulumi.log.info(`Oracle Cloud Infrastructure Deployment Complete:
+- Region: ${region}
 - Instance ID: ${instId}
-- Public IP: ${pubIp}
+- Public IP: ${pubIp} 
 - Private IP: ${privIp}
 - VCN ID: ${vId}
 - Subnet ID: ${sId}
-- Website URL: ${url}`);
+- Website URL: ${url}
+- Domain: https://m4nuel.blog`);
     }
 );

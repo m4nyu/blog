@@ -1,0 +1,19 @@
+[build]
+command = "cargo build --release --features ssr"
+
+[serve]
+command = "cargo run --release --features ssr"
+
+[options]
+site_addr = "127.0.0.1:3000"
+reload_port = 3001
+
+[frontend]
+watch = ["src/**/*.rs", "posts/**/*.md"]
+
+[site]
+site_root = "."
+site_pkg_dir = "pkg"
+
+[env]
+LEPTOS_SITE_ADDR = "127.0.0.1:3000"

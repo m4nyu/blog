@@ -1,0 +1,64 @@
+name: Deploy Blog
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  infrastructure:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Setup Pulumi
+      uses: pulumi/actions@v5
+      
+    - name: Create OCI private key file
+      run: |
+        echo "${{ secrets.OCI_PRIVATE_KEY }}" > /tmp/oci_private_key.pem
+        chmod 600 /tmp/oci_private_key.pem
+        
+    - name: Configure Pulumi
+      run: |
+        pulumi stack select dev || pulumi stack init dev
+        pulumi config set oci:tenancyOcid "${{ secrets.OCI_TENANCY_OCID }}" --secret
+        pulumi config set oci:userOcid "${{ secrets.OCI_USER_OCID }}" --secret  
+        pulumi config set oci:fingerprint "${{ secrets.OCI_FINGERPRINT }}" --secret
+        pulumi config set oci:region us-phoenix-1
+        pulumi config set oci:privateKeyPath /tmp/oci_private_key.pem
+      env:
+        PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+        
+    - name: Deploy infrastructure
+      run: pulumi up --yes
+      env:
+        PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+        
+    - name: Clean up
+      run: rm /tmp/oci_private_key.pem
+
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Deploy via webhook
+      run: |
+        # The webhook server on the OCI instance will handle deployment automatically
+        # This job exists to show deployment status in GitHub Actions
+        echo "Deployment triggered via GitHub webhook"
+        echo "Check server logs at https://m4nuel.blog for deployment status"
