@@ -1,3 +1,12 @@
-encryptionsalt: v1:XNEnKLBmzBM=:v1:Y+HpSwcliviu1v+3:xOaNMTLhN+3xczqqx9Q1pXyyITOQvw==
+encryptionsalt: v1:fJxAM1eal98=:v1:hbATKMMa/U2U/4Q5:96NjGVXhcU+y4/HUpxMwTtfsj/wBPA==
 config:
+  oci:tenancyOcid:
+    secure: v1:Z9DfDldm8F2OmrXp:f1YLVWIHNhEtuHTwck4PAlNTjepJA9h86urYOtiWZHPQDxuRsDxmvKjwGuopIknI0s2M5BnqJV3N3EKmRr1uv+FzJ+klRibmaHVUzYu+Tewq2bXy/dHQ4M9xAZ9B79c=
+  oci:userOcid:
+    secure: v1:W42Qs7w+0B3+drvT:x+CrQb2w/zykWM8j032huSqNv87ieE9Yzh8BMkW4//cJ8Pfl2cjXBZxVhCECd1yBwpEnONklYo42zZnlf/DsaypUeNY+qeeKdtQ7bXet3WFIUt0s8rdh3pZyHhU=
+  oci:fingerprint:
+    secure: v1:Bq4z3BpNhYe/Wo2S:6TU2Ps3LZiZGytIpe+YAfsOQCCwr1XlDte0NLNMnqihZw1bl9oNasY67s02NpFXVJu8xQXUj84HO9cpkP5Vm
   oci:region: us-phoenix-1
+  oci:privateKeyPath: /tmp/oci_private_key.pem
+  blog:sshPublicKey:
+    secure: v1:llurXlJMXUHiuJXP:4sxe69q1+sgUG67fxv5WHU8APTN15bKEmwEz0DvE0A1Jv+aPyBEj4wQNmDupxiiXIWo2QcXysqCLegjMCBK640B08bWBpgWLuSGQFmfAT1ML0Sb0ewCNcR4Bd7Cgw9v6A15vwwLJu1CvqhbvGc+L5ZZkcYtQTQx/mA==
