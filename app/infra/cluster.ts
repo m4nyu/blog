@@ -13,10 +13,18 @@ export class Compute {
         const leptosOutputName = config.get("leptosOutputName") || "blog";
         const leptosSiteAddr = config.get("leptosSiteAddr") || "0.0.0.0:3000";
         const rustLog = config.get("rustLog") || "info";
-        // Use a platform image specifically for E2.1.Micro (x86_64)
-        // This is a hard-coded Oracle-provided platform image that works with E2.1.Micro
-        // Oracle Linux 8 platform image for x86_64
-        const image = pulumi.output("ocid1.image.oc1.phx.aaaaaaaafx6vdtqpjsqdjaietaoxnz74dnp4llnybotatih5iqopomfhseaa");
+        // Use ARM-compatible image for A1.Flex 
+        // Since ARM worked in manual testing, we need ARM64/aarch64 images
+        const images = values.tenancy.apply(tenancyId => oci.core.getImages({
+            compartmentId: tenancyId,
+            operatingSystem: "Oracle Linux",
+            operatingSystemVersion: "8",
+            shape: "VM.Standard.A1.Flex", // This ensures ARM compatibility
+            sortBy: "TIMECREATED", 
+            sortOrder: "DESC",
+        }));
+
+        const image = images.apply(imgs => imgs.images[0].id);
 
         // Cloud-init script to install Docker, nginx, and set up SSL with Let's Encrypt
         const cloudInit = pulumi.interpolate`#cloud-config
@@ -89,8 +97,8 @@ write_files:
       sudo certbot --nginx -d ${values.domain} --non-interactive --agree-tos --email ${values.email}
 `;
 
-        // Single Always Free E2.1.Micro instance (1/8 OCPU, 1GB RAM) - x86_64
-        // This is the OTHER Always Free option besides ARM
+        // Single Always Free ARM A1.Flex instance (2 OCPU, 12GB RAM)
+        // Using ARM since you confirmed these work in manual testing
         this.instance = new oci.core.Instance("instance", {
             compartmentId: values.tenancy,
             displayName: pulumi.interpolate`${values.project}-blog`,
@@ -100,8 +108,11 @@ write_files:
                 });
                 return ads.availabilityDomains[0].name;
             }),
-            shape: "VM.Standard.E2.1.Micro",
-            // E2.1.Micro doesn't need shapeConfig - it's fixed size
+            shape: "VM.Standard.A1.Flex",
+            shapeConfig: {
+                ocpus: 2,        // Use 2 of 4 Always Free ARM cores
+                memoryInGbs: 12, // Use 12GB of 24GB Always Free ARM memory
+            },
             sourceDetails: {
                 sourceType: "image",
                 sourceId: image,
