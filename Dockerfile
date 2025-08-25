@@ -1,30 +1,35 @@
-FROM rust:1.75-slim AS builder
+FROM rust:1.75-alpine AS builder
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+RUN apk add --no-cache \
+    musl-dev \
+    pkgconfig \
+    openssl-dev
 
 WORKDIR /app
 
-# Copy source and build
+# Copy dependency files first for better caching
+COPY Cargo.toml Cargo.lock ./
+
+# Create dummy source for dependency caching
+RUN mkdir -p app/src && echo "fn main() {}" > app/src/main.rs && echo "" > app/src/lib.rs
+RUN cargo build --release --features ssr
+RUN rm -rf app/src
+
+# Copy actual source and build
 COPY . .
 RUN cargo build --release --features ssr
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM alpine:3.18
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     ca-certificates \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    curl
 
 # Create non-root user
-RUN useradd -u 1000 -m -s /bin/bash appuser
+RUN adduser -D -u 1000 appuser
 
 WORKDIR /app
 
