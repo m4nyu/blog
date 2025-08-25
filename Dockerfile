@@ -9,11 +9,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy source code and cargo files
-COPY app/src ./app/src
-COPY app/public ./app/public
-COPY Cargo.toml Cargo.lock ./
-COPY app/posts ./app/posts
+# Copy everything (filtered by .dockerignore)
+COPY . .
 
 # Build with SSR features for production
 RUN cargo build --release --features ssr
