@@ -1,21 +1,35 @@
 name: blog
 runtime: nodejs
-description: A Leptos blog deployed to Oracle Cloud Infrastructure Always Free tier
+description: A Leptos blog deployed to Oracle Cloud Infrastructure with Kubernetes
 
 template:
   config:
-    oci:region:
-      description: The primary OCI region to deploy to
-      default: us-phoenix-1
-    oci:tenancyOcid:
+    # OCI Configuration
+    oci:tenancy:
       description: Oracle Cloud Tenancy OCID
       secret: true
-    oci:userOcid:
-      description: Oracle Cloud User OCID
+    
+    # Project Configuration
+    project:
+      description: Project name for resource naming
       secret: true
-    oci:privateKey:
-      description: Oracle Cloud API Private Key (PEM format)
+      default: blog
+    region:
+      description: OCI region to deploy to
       secret: true
-    oci:fingerprint:
-      description: Oracle Cloud API Key Fingerprint
+      default: us-phoenix-1
+    environment:
+      description: Environment (production, staging, etc.)
+      secret: true
+      default: production
+    
+    # Domain Configuration
+    dns:domain:
+      description: Domain name for the blog
+      secret: true
+      default: m4nuel.blog
+    
+    # TLS Configuration  
+    tls:acmeEmail:
+      description: Email address for Let's Encrypt certificates
       secret: true

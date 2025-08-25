@@ -1,57 +1,54 @@
-FROM rust:1.75-slim as builder
+# Build arguments from Pulumi config
+ARG RUST_VERSION=1.75
+ARG DEBIAN_VERSION=bookworm-slim
+ARG APP_BINARY=tailwind
+ARG BUILD_FEATURES=ssr
 
-WORKDIR /app
-COPY . .
-RUN cargo build --release --features ssr
+FROM rust:${RUST_VERSION}-slim as builder
 
-FROM debian:bookworm-slim
-
-# Install nginx, supervisor, and required packages
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
-    nginx \
-    supervisor \
-    ca-certificates \
+    pkg-config \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy application files
-COPY --from=builder /app/target/release/tailwind /app/tailwind
-COPY --from=builder /app/public /app/public
-COPY --from=builder /app/posts /app/posts
-COPY --from=builder /app/Leptos.toml /app/Leptos.toml
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/sites-available/default
-RUN rm -f /etc/nginx/sites-enabled/default && \
-    ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+# Copy app source and cargo files
+COPY app/src ./app/src
+COPY app/public ./app/public
+COPY Cargo.toml Cargo.lock ./
+COPY posts ./posts
 
-# Create supervisor configuration
-RUN mkdir -p /etc/supervisor/conf.d
-COPY <<EOF /etc/supervisor/conf.d/supervisord.conf
-[supervisord]
-nodaemon=true
-user=root
+# Build with configurable features
+RUN cargo build --release --features ${BUILD_FEATURES}
 
-[program:nginx]
-command=nginx -g "daemon off;"
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/nginx.err.log
-stdout_logfile=/var/log/nginx.out.log
+FROM debian:${DEBIAN_VERSION}
 
-[program:leptos]
-command=/app/tailwind
-directory=/app
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/leptos.err.log
-stdout_logfile=/var/log/leptos.out.log
-environment=LEPTOS_SITE_ADDR="127.0.0.1:3000"
-EOF
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Expose HTTP and HTTPS ports
-EXPOSE 80 443
+# Copy binary and assets with configurable name
+ARG APP_BINARY
+COPY --from=builder /app/target/release/${APP_BINARY} ./app
+COPY --from=builder /app/posts ./posts
+COPY --from=builder /app/target/site ./public
 
-# Start supervisor to manage both nginx and the Leptos app
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Environment variables should be set at runtime via deployment configuration
+
+# Run as non-root user for security
+RUN useradd -u 1000 -s /bin/bash appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/ || exit 1
+
+CMD ["./app"]

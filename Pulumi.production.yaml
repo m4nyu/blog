@@ -1,0 +1,23 @@
+encryptionsalt: v1:70cGawfKTJ0=:v1:mRlQhcmfLYZB2/dl:eCiWIplUKcW8p6WHEitPeQemo//GeA==
+config:
+  oci:tenancyOcid:
+    secure: v1:pbHDMaYi2dKHR+In:IYTj+FsVTclZlETIhyoDCk/tq+eSrkMTUtxECKTSgxEZIeua/qc3L1XabWi09NCNk40aWmsIDhKav6JXQiB7jpjxBZ5XnqmKNufkClTsCVTFBPFxso6He502AOswYbc=
+  blog:region:
+    secure: v1:45zi6r504RGtyuvF:OO7Yvkedfz7NZ6Zkaw9b8k/DEupHmuq+LSQ9jw==
+  blog:project:
+    secure: v1:isHBHPWT4ZU0/YOc:RMW1p68BhsHLf8xs8w/RvCAlt2avs+BqLfVu
+  blog:environment:
+    secure: v1:gXAIU4wpRx+8YqZ3:ARfTaTqD/pTjBZklfvciOx4Pv0ubUD+/410=
+  dns:domain:
+    secure: v1:h5TaXNKvU3WOmc2J:HxBY++e6azU9V8mmbmokdQPzX1ibGNSNqEqY
+  tls:acmeEmail:
+    secure: v1:aVjPQwYXexuKbGGV:zlKlpqH7hiCSPOiriQhE0pjFvXSGwCVTSRSuGNe7Z/EkYLKPkOdwrg==
+  oci:userOcid:
+    secure: v1:ireip1GFXUS8yk96:gRl6bqANGqzHM6CuxHZoCKmWQsoll5arDLe88X4224FEIQ2+GtS8Am/w0hFGMEDNcQQ8QNlBlqCSz1YsQ8uIHsLnQh+zLz8d9j4+AQexJFQP4GmTWZbYBCa0KRw=
+  oci:fingerprint:
+    secure: v1:61GdkRbjqboRP09i:AUKUWxgVz0Lcb6kvEwedZK96g3L+QLvr3HQNPwVGS5pr22OOHqPTRn87xC40yQfJrawKrgam2lGCDLjgbEGM
+  oci:privateKeyPath:
+    secure: v1:rPJ29BjOjvGntDdc:eDHLVqmi7V0NU4l9HyKoZiSKKnFgR9FfUN0EeTjLlXxtqcNgB6O5aA==
+  oci:region:
+    secure: v1:YTO9Df6UUdNa0Z5M:HLIwEJnlBjZow5rpKgA7OW/BDUd+93rov0l9/A==
+  blog:activeEnvironment: blue
