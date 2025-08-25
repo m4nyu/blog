@@ -36,7 +36,7 @@ WORKDIR /app
 # Copy binary and assets with proper ownership
 COPY --from=builder --chown=appuser:appuser /app/target/release/tailwind ./app
 COPY --from=builder --chown=appuser:appuser /app/app/posts ./posts
-COPY --from=builder --chown=appuser:appuser /app/target/site ./public
+COPY --from=builder --chown=appuser:appuser /app/app/public ./public
 
 USER appuser
 EXPOSE 3000
