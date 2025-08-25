@@ -1,43 +1,42 @@
-# Railway deployment Dockerfile
-FROM rust:1.75-slim as builder
+FROM rust:1.75-slim AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 WORKDIR /app
 
-# Copy everything (filtered by .dockerignore)
+# Copy source and build
 COPY . .
-
-# Build with SSR features for production
 RUN cargo build --release --features ssr
 
+# Runtime stage
 FROM debian:bookworm-slim
 
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user
+RUN useradd -u 1000 -m -s /bin/bash appuser
 
 WORKDIR /app
 
-# Copy binary and assets
-COPY --from=builder /app/target/release/tailwind ./app
-COPY --from=builder /app/app/posts ./posts
-COPY --from=builder /app/target/site ./public
+# Copy binary and assets with proper ownership
+COPY --from=builder --chown=appuser:appuser /app/target/release/tailwind ./app
+COPY --from=builder --chown=appuser:appuser /app/app/posts ./posts
+COPY --from=builder --chown=appuser:appuser /app/target/site ./public
 
-# Run as non-root user for security
-RUN useradd -u 1000 -s /bin/bash appuser && \
-    chown -R appuser:appuser /app
 USER appuser
-
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3000/ || exit 1
 
 CMD ["./app"]
