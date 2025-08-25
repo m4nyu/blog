@@ -1,4 +1,4 @@
-FROM rust:1.81-alpine AS builder
+FROM rust:1.82-alpine AS builder
 
 # Install build dependencies  
 RUN apk add --no-cache \
@@ -36,7 +36,7 @@ WORKDIR /app
 # Copy binary and assets with proper ownership
 COPY --from=builder --chown=appuser:appuser /app/target/release/tailwind ./app
 COPY --from=builder --chown=appuser:appuser /app/app/posts ./posts
-COPY --from=builder --chown=appuser:appuser /app/target/site ./public
+COPY --from=builder --chown=appuser:appuser /app/app/public ./public
 
 USER appuser
 EXPOSE 3000
