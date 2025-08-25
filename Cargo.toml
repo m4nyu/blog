@@ -10,6 +10,11 @@ categories = ["web-programming", "wasm"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+path = "app/src/lib.rs"
+
+[[bin]]
+name = "tailwind"
+path = "app/src/main.rs"
 
 [dependencies]
 leptos = { version = "0.5.7" }
@@ -153,8 +158,8 @@ site-pkg-dir = "pkg"
 # The tailwind input file.
 #
 # Optional, Activates the tailwind build
-tailwind-input-file = "src/styles/global.css"
-assets-dir = "public"
+tailwind-input-file = "app/src/styles/global.css"
+assets-dir = "app/public"
 # The IP and port (ex: 127.0.0.1:3000) where the server serves the content. Use it in your server setup.
 site-addr = "127.0.0.1:4002"
 # The port to use for automatic reload monitoring
