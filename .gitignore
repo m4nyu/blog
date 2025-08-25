@@ -39,3 +39,14 @@ build/
 *.log
 .env.local
 .env.*.local
+
+# Pulumi
+.pulumi/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+/target
+.shuttle*
+Secrets*.toml
