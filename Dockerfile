@@ -1,6 +1,6 @@
 FROM rust:1.75-alpine AS builder
 
-# Install build dependencies
+# Install build dependencies  
 RUN apk add --no-cache \
     musl-dev \
     pkgconfig \
