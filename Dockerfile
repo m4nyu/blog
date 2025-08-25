@@ -39,6 +39,13 @@ COPY --from=builder --chown=appuser:appuser /app/app/posts ./posts
 COPY --from=builder --chown=appuser:appuser /app/app/public ./public
 
 USER appuser
+
+# Set environment variables
+ENV LEPTOS_OUTPUT_NAME="blog"
+ENV LEPTOS_SITE_ADDR="0.0.0.0:3000"
+ENV LEPTOS_SITE_ROOT="."
+ENV RUST_LOG="info"
+
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
