@@ -42,13 +42,15 @@ USER appuser
 
 # Set environment variables
 ENV LEPTOS_OUTPUT_NAME="blog"
-ENV LEPTOS_SITE_ADDR="0.0.0.0:3000"
 ENV LEPTOS_SITE_ROOT="."
 ENV RUST_LOG="info"
 
+# Railway will set PORT, default to 3000 for local
+ENV PORT=3000
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:3000/ || exit 1
+    CMD curl -f http://localhost:${PORT}/ || exit 1
 
-CMD ["./app"]
+# Use shell form to expand PORT variable
+CMD LEPTOS_SITE_ADDR="0.0.0.0:${PORT}" ./app
