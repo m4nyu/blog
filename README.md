@@ -34,6 +34,47 @@ cargo install cargo-leptos
 cargo leptos watch
 ```
 
+## ▲ Deploy
+
+### Prerequisites (one-time setup)
+```bash
+# Install Pulumi CLI
+curl -fsSL https://get.pulumi.com | sh
+
+# Configure AWS
+aws configure
+
+# Initialize Pulumi stack
+pulumi stack init production
+```
+
+### Deploy to AWS (Multi-Region + CloudFront)
+```bash
+# Single command deployment
+bun run deploy
+```
+
+This will:
+- ✅ Build your Leptos blog
+- ✅ Deploy to US West & EU West regions
+- ✅ Set up global CloudFront CDN
+- ✅ Provide enterprise-grade security
+
+### Optional: Add Custom Domain + Cloudflare Security
+```bash
+pulumi config set blog:domain yourdomain.com
+pulumi config set cloudflare:zoneId YOUR_ZONE_ID
+pulumi config set cloudflare:apiToken YOUR_TOKEN --secret
+bun run deploy
+```
+
+### Individual Operations
+```bash
+bun run preview      # Preview infrastructure changes
+bun run sync         # Sync files to S3 buckets  
+bun run invalidate   # Clear CloudFront cache
+```
+
 ## ■ Adding Posts
 
 Create markdown files in `content/` directory:
