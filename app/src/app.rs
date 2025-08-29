@@ -142,7 +142,7 @@ pub fn App() -> impl IntoView {
     provide_context(population_density);
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/tailwind_actix.css"/>
+        <Stylesheet id="leptos" href="/pkg/blog.css"/>
         <Link rel="icon" type_="image/svg+xml" href="/favicon.svg?v=2"/>
         <Link rel="icon" type_="image/png" sizes="32x32" href="/favicon-32x32.png?v=2"/>
         <Link rel="apple-touch-icon" href="/favicon-192x192.png"/>
