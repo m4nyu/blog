@@ -38,7 +38,7 @@ RUN adduser -D -u 1000 appuser
 WORKDIR /app
 
 # Copy binary and assets with proper ownership
-COPY --from=builder --chown=appuser:appuser /app/target/server/tailwind ./tailwind
+COPY --from=builder --chown=appuser:appuser /app/target/server/blog ./blog
 COPY --from=builder --chown=appuser:appuser /app/app/posts ./posts  
 # Copy the compiled site artifacts (CSS, JS, WASM)
 COPY --from=builder --chown=appuser:appuser /app/target/site ./site
@@ -61,4 +61,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/ || exit 1
 
 # Use shell form to expand PORT variable
-CMD LEPTOS_SITE_ADDR="0.0.0.0:${PORT}" ./tailwind
+CMD LEPTOS_SITE_ADDR="0.0.0.0:${PORT}" ./blog

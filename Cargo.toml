@@ -1,5 +1,5 @@
 [package]
-name = "tailwind"
+name = "blog"
 version = "0.1.0"
 edition = "2021"
 description = "A fast, modern blog built with Rust and Leptos"
@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 path = "app/src/lib.rs"
 
 [[bin]]
-name = "tailwind"
+name = "blog"
 path = "app/src/main.rs"
 
 [dependencies]
