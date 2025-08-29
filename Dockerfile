@@ -10,8 +10,8 @@ RUN apk add --no-cache \
     npm \
     binaryen
 
-# Install cargo-leptos for proper build
-RUN cargo install cargo-leptos
+# Install cargo-leptos for proper build (pin to compatible version)
+RUN cargo install cargo-leptos --version 0.2.20
 
 WORKDIR /app
 
