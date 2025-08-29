@@ -48,7 +48,7 @@ COPY --from=builder --chown=appuser:appuser /app/app/public/* ./site/
 USER appuser
 
 # Set environment variables
-ENV LEPTOS_OUTPUT_NAME="tailwind_actix"
+ENV LEPTOS_OUTPUT_NAME="blog"
 ENV LEPTOS_SITE_ROOT="site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV RUST_LOG="info"
