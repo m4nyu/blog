@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: blog
+    runtime: docker
+    repo: https://github.com/m4nyu/blog.git
+    branch: feat/deployment
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: LEPTOS_OUTPUT_NAME
+        value: blog
+      - key: LEPTOS_SITE_ROOT
+        value: .
+      - key: RUST_LOG
+        value: info
+      - key: LEPTOS_SITE_ADDR
+        fromGroup: LEPTOS_SITE_ADDR
+    healthCheckPath: /
+    region: oregon
+    plan: free
