@@ -38,16 +38,17 @@ RUN adduser -D -u 1000 appuser
 WORKDIR /app
 
 # Copy binary and assets with proper ownership
-COPY --from=builder --chown=appuser:appuser /app/target/server/tailwind ./tailwind
+COPY --from=builder --chown=appuser:appuser /app/target/server/blog ./blog
 COPY --from=builder --chown=appuser:appuser /app/app/posts ./posts  
-COPY --from=builder --chown=appuser:appuser /app/app/public ./public
 # Copy the compiled site artifacts (CSS, JS, WASM)
 COPY --from=builder --chown=appuser:appuser /app/target/site ./site
+# Copy public assets (favicon, etc.) to the site root so they're served at root paths
+COPY --from=builder --chown=appuser:appuser /app/app/public/* ./site/
 
 USER appuser
 
 # Set environment variables
-ENV LEPTOS_OUTPUT_NAME="tailwind_actix"
+ENV LEPTOS_OUTPUT_NAME="blog"
 ENV LEPTOS_SITE_ROOT="site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV RUST_LOG="info"
@@ -60,4 +61,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/ || exit 1
 
 # Use shell form to expand PORT variable
-CMD LEPTOS_SITE_ADDR="0.0.0.0:${PORT}" ./tailwind
+CMD LEPTOS_SITE_ADDR="0.0.0.0:${PORT}" ./blog
