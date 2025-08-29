@@ -7,11 +7,11 @@ RUN apk add --no-cache \
     pkgconfig \
     openssl-dev \
     nodejs \
-    npm \
-    binaryen
+    npm
 
-# Install cargo-leptos for proper build (pin to compatible version)
-RUN cargo install cargo-leptos --version 0.2.20
+# Add wasm32 target and install wasm-bindgen-cli
+RUN rustup target add wasm32-unknown-unknown
+RUN cargo install wasm-bindgen-cli --version 0.2.93
 
 WORKDIR /app
 
@@ -21,8 +21,23 @@ COPY . .
 # Install Node dependencies for Tailwind
 RUN npm install
 
-# Build with cargo-leptos to compile CSS and WASM
-RUN cargo leptos build --release
+# Build Tailwind CSS
+RUN npx tailwindcss -i app/src/styles/global.css -o target/site/pkg/blog.css --minify
+
+# Create target directories
+RUN mkdir -p target/site/pkg target/server
+
+# Build Rust server binary 
+RUN cargo build --release --features ssr --bin blog
+
+# Build WASM for client side
+RUN cargo build --release --features hydrate --target wasm32-unknown-unknown --lib
+
+# Generate WASM bindings
+RUN wasm-bindgen target/wasm32-unknown-unknown/release/blog.wasm --out-dir target/site/pkg --web --no-typescript --target web --omit-default-module-path
+
+# Copy server binary to expected location
+RUN cp target/release/blog target/server/blog
 
 # Runtime stage
 FROM alpine:3.18
