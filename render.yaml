@@ -12,8 +12,6 @@ services:
         value: .
       - key: RUST_LOG
         value: info
-      - key: LEPTOS_SITE_ADDR
-        fromGroup: LEPTOS_SITE_ADDR
     healthCheckPath: /
     region: oregon
     plan: free
