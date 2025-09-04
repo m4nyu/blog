@@ -40,7 +40,7 @@ pub async fn get_all_posts() -> Result<Vec<BlogPost>, std::io::Error> {
 
     let posts_dir = Path::new("app/posts");
     let mut posts = Vec::new();
-    
+
     if posts_dir.exists() {
         let mut entries = fs::read_dir(posts_dir).await?;
 

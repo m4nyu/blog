@@ -11,7 +11,8 @@ use crate::components::ui::life::Life;
 
 #[server(GetPosts, "/api")]
 pub async fn get_posts() -> Result<Vec<crate::components::post::BlogPost>, ServerFnError> {
-    get_all_posts().await
+    get_all_posts()
+        .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))
 }
 
