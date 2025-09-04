@@ -11,7 +11,7 @@ RUN apk add --no-cache \
 
 # Add wasm32 target and install wasm-bindgen-cli
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo install wasm-bindgen-cli --version 0.2.93
+RUN cargo install wasm-bindgen-cli --version 0.2.100
 
 WORKDIR /app
 
@@ -21,20 +21,24 @@ COPY . .
 # Install Node dependencies for Tailwind
 RUN npm install
 
-# Build Tailwind CSS
-RUN npx tailwindcss -i app/src/styles/global.css -o target/site/pkg/blog.css --minify
-
 # Create target directories
 RUN mkdir -p target/site/pkg target/server
 
-# Build Rust server binary 
+# Build server binary with SSR features
 RUN cargo build --release --features ssr --bin blog
 
-# Build WASM for client side
+# Build WASM client with hydrate features
 RUN cargo build --release --features hydrate --target wasm32-unknown-unknown --lib
 
 # Generate WASM bindings
-RUN wasm-bindgen target/wasm32-unknown-unknown/release/blog.wasm --out-dir target/site/pkg --web --no-typescript --target web --omit-default-module-path
+RUN wasm-bindgen target/wasm32-unknown-unknown/release/blog.wasm \
+    --out-dir target/site/pkg \
+    --target web \
+    --no-typescript
+
+# Copy pre-built CSS file (Tailwind v4 requires complex build)
+# The CSS should be committed to the repo for production builds
+COPY app/src/styles/tailwind.css target/site/pkg/blog.css
 
 # Copy server binary to expected location
 RUN cp target/release/blog target/server/blog
@@ -54,7 +58,8 @@ WORKDIR /app
 
 # Copy binary and assets with proper ownership
 COPY --from=builder --chown=appuser:appuser /app/target/server/blog ./blog
-COPY --from=builder --chown=appuser:appuser /app/app/posts ./posts  
+# Create app directory and copy posts to maintain the expected app/posts path structure
+COPY --from=builder --chown=appuser:appuser /app/app/posts ./app/posts  
 # Copy the compiled site artifacts (CSS, JS, WASM)
 COPY --from=builder --chown=appuser:appuser /app/target/site ./site
 # Copy public assets (favicon, etc.) to the site root so they're served at root paths
