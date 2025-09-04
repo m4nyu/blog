@@ -4,32 +4,34 @@
 @layer theme, base, components, utilities;
 
 @layer theme {
-  :root, :host {
-    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  :root,
+  :host {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+      "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --color-red-100: oklch(93.6% .032 17.717);
-    --color-red-200: oklch(88.5% .062 18.334);
-    --color-red-400: oklch(70.4% .191 22.216);
-    --color-red-800: oklch(44.4% .177 26.899);
-    --color-red-900: oklch(39.6% .141 25.723);
-    --color-yellow-100: oklch(97.3% .071 103.193);
-    --color-yellow-200: oklch(94.5% .129 101.54);
-    --color-yellow-400: oklch(85.2% .199 91.936);
-    --color-yellow-500: oklch(79.5% .184 86.047);
-    --color-yellow-800: oklch(47.6% .114 61.907);
-    --color-yellow-900: oklch(42.1% .095 57.708);
-    --color-green-100: oklch(96.2% .044 156.743);
-    --color-green-200: oklch(92.5% .084 155.995);
-    --color-green-400: oklch(79.2% .209 151.711);
-    --color-green-500: oklch(72.3% .219 149.579);
-    --color-green-800: oklch(44.8% .119 151.328);
-    --color-green-900: oklch(39.3% .095 152.535);
-    --color-blue-100: oklch(93.2% .032 255.585);
-    --color-blue-400: oklch(70.7% .165 254.624);
-    --color-blue-900: oklch(37.9% .146 265.522);
-    --color-gray-400: oklch(70.7% .022 261.325);
-    --color-gray-500: oklch(55.1% .027 264.364);
-    --color-gray-600: oklch(44.6% .03 256.802);
+    --color-red-100: oklch(93.6% 0.032 17.717);
+    --color-red-200: oklch(88.5% 0.062 18.334);
+    --color-red-400: oklch(70.4% 0.191 22.216);
+    --color-red-800: oklch(44.4% 0.177 26.899);
+    --color-red-900: oklch(39.6% 0.141 25.723);
+    --color-yellow-100: oklch(97.3% 0.071 103.193);
+    --color-yellow-200: oklch(94.5% 0.129 101.54);
+    --color-yellow-400: oklch(85.2% 0.199 91.936);
+    --color-yellow-500: oklch(79.5% 0.184 86.047);
+    --color-yellow-800: oklch(47.6% 0.114 61.907);
+    --color-yellow-900: oklch(42.1% 0.095 57.708);
+    --color-green-100: oklch(96.2% 0.044 156.743);
+    --color-green-200: oklch(92.5% 0.084 155.995);
+    --color-green-400: oklch(79.2% 0.209 151.711);
+    --color-green-500: oklch(72.3% 0.219 149.579);
+    --color-green-800: oklch(44.8% 0.119 151.328);
+    --color-green-900: oklch(39.3% 0.095 152.535);
+    --color-blue-100: oklch(93.2% 0.032 255.585);
+    --color-blue-400: oklch(70.7% 0.165 254.624);
+    --color-blue-900: oklch(37.9% 0.146 265.522);
+    --color-gray-400: oklch(70.7% 0.022 261.325);
+    --color-gray-500: oklch(55.1% 0.027 264.364);
+    --color-gray-600: oklch(44.6% 0.03 256.802);
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
@@ -38,9 +40,9 @@
     --container-5xl: 64rem;
     --container-7xl: 80rem;
     --text-xs: .75rem;
-    --text-xs--line-height: calc(1 / .75);
+    --text-xs--line-height: calc(1 / 0.75);
     --text-sm: .875rem;
-    --text-sm--line-height: calc(1.25 / .875);
+    --text-sm--line-height: calc(1.25 / 0.875);
     --text-base: 1rem;
     --text-base--line-height: calc(1.5 / 1);
     --text-lg: 1.125rem;
@@ -64,10 +66,10 @@
     --radius-md: .375rem;
     --radius-lg: .5rem;
     --animate-spin: spin 1s linear infinite;
-    --animate-pulse: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
+    --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     --blur-sm: 8px;
     --default-transition-duration: .15s;
-    --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+    --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --radius: 0;
@@ -94,18 +96,32 @@
 }
 
 @layer base {
-  *, :after, :before, ::backdrop, ::file-selector-button {
+  *,
+  :after,
+  :before,
+  ::backdrop,
+  ::file-selector-button {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     border: 0 solid;
   }
 
-  html, :host {
+  html,
+  :host {
     line-height: 1.5;
     -webkit-text-size-adjust: 100%;
     tab-size: 4;
-    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-family: var(
+      --default-font-family,
+      ui-sans-serif,
+      system-ui,
+      sans-serif,
+      "Apple Color Emoji",
+      "Segoe UI Emoji",
+      "Segoe UI Symbol",
+      "Noto Color Emoji"
+    );
     font-feature-settings: var(--default-font-feature-settings, normal);
     font-variation-settings: var(--default-font-variation-settings, normal);
     -webkit-tap-highlight-color: transparent;
@@ -122,7 +138,12 @@
     text-decoration: underline dotted;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-size: inherit;
     font-weight: inherit;
   }
@@ -133,12 +154,26 @@
     text-decoration: inherit;
   }
 
-  b, strong {
+  b,
+  strong {
     font-weight: bolder;
   }
 
-  code, kbd, samp, pre {
-    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(
+      --default-mono-font-family,
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      "Liberation Mono",
+      "Courier New",
+      monospace
+    );
     font-feature-settings: var(--default-mono-font-feature-settings, normal);
     font-variation-settings: var(--default-mono-font-variation-settings, normal);
     font-size: 1em;
@@ -148,7 +183,8 @@
     font-size: 80%;
   }
 
-  sub, sup {
+  sub,
+  sup {
     font-size: 75%;
     line-height: 0;
     position: relative;
@@ -181,21 +217,36 @@
     display: list-item;
   }
 
-  ol, ul, menu {
+  ol,
+  ul,
+  menu {
     list-style: none;
   }
 
-  img, svg, video, canvas, audio, iframe, embed, object {
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
     display: block;
     vertical-align: middle;
   }
 
-  img, video {
+  img,
+  video {
     max-width: 100%;
     height: auto;
   }
 
-  button, input, select, optgroup, textarea, ::file-selector-button {
+  button,
+  input,
+  select,
+  optgroup,
+  textarea,
+  ::file-selector-button {
     font: inherit;
     font-feature-settings: inherit;
     font-variation-settings: inherit;
@@ -255,7 +306,15 @@
     padding: 0;
   }
 
-  ::-webkit-datetime-edit, ::-webkit-datetime-edit-year-field, ::-webkit-datetime-edit-month-field, ::-webkit-datetime-edit-day-field, ::-webkit-datetime-edit-hour-field, ::-webkit-datetime-edit-minute-field, ::-webkit-datetime-edit-second-field, ::-webkit-datetime-edit-millisecond-field, ::-webkit-datetime-edit-meridiem-field {
+  ::-webkit-datetime-edit,
+  ::-webkit-datetime-edit-year-field,
+  ::-webkit-datetime-edit-month-field,
+  ::-webkit-datetime-edit-day-field,
+  ::-webkit-datetime-edit-hour-field,
+  ::-webkit-datetime-edit-minute-field,
+  ::-webkit-datetime-edit-second-field,
+  ::-webkit-datetime-edit-millisecond-field,
+  ::-webkit-datetime-edit-meridiem-field {
     padding-block: 0;
   }
 
@@ -263,11 +322,14 @@
     box-shadow: none;
   }
 
-  button, input:where([type="button"], [type="reset"], [type="submit"]), ::file-selector-button {
+  button,
+  input:where([type="button"], [type="reset"], [type="submit"]),
+  ::file-selector-button {
     appearance: button;
   }
 
-  ::-webkit-inner-spin-button, ::-webkit-outer-spin-button {
+  ::-webkit-inner-spin-button,
+  ::-webkit-outer-spin-button {
     height: auto;
   }
 
@@ -914,7 +976,7 @@
   }
 
   .py-0\.5 {
-    padding-block: calc(var(--spacing) * .5);
+    padding-block: calc(var(--spacing) * 0.5);
   }
 
   .py-1 {
@@ -1186,21 +1248,23 @@
   }
 
   .opacity-50 {
-    opacity: .5;
+    opacity: 0.5;
   }
 
   .opacity-75 {
-    opacity: .75;
+    opacity: 0.75;
   }
 
   .shadow-sm {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+      var(--tw-shadow);
   }
 
   .shadow-xl {
     --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color, #0000001a), 0 8px 10px -6px var(--tw-shadow-color, #0000001a);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+      var(--tw-shadow);
   }
 
   .ring-offset-background {
@@ -1223,7 +1287,8 @@
   }
 
   .transition {
-    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, visibility, content-visibility, overlay, pointer-events;
+    transition-property:
+      color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, visibility, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
@@ -1235,7 +1300,8 @@
   }
 
   .transition-colors {
-    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+      --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
@@ -1360,7 +1426,8 @@
 
   .focus\:ring-0:focus {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(0px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+      var(--tw-shadow);
   }
 
   .focus\:outline-none:focus {
@@ -1370,7 +1437,8 @@
 
   .focus-visible\:ring-2:focus-visible {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+      var(--tw-shadow);
   }
 
   .focus-visible\:ring-ring:focus-visible {
@@ -1392,7 +1460,7 @@
   }
 
   .disabled\:opacity-50:disabled {
-    opacity: .5;
+    opacity: 0.5;
   }
 
   @media (min-width: 40rem) {
@@ -2038,17 +2106,92 @@
 }
 
 .dark .conway-background {
-  background-image: radial-gradient(circle at 10% 15%, #17171766 1px, #0000 1px), radial-gradient(circle at 11% 15%, #17171766 1px, #0000 1px), radial-gradient(circle at 10% 16%, #17171766 1px, #0000 1px), radial-gradient(circle at 11% 16%, #17171766 1px, #0000 1px), radial-gradient(circle at 40% 60%, #1717174d 1px, #0000 1px), radial-gradient(circle at 41% 60%, #1717174d 1px, #0000 1px), radial-gradient(circle at 39% 61%, #1717174d 1px, #0000 1px), radial-gradient(circle at 42% 61%, #1717174d 1px, #0000 1px), radial-gradient(circle at 40% 62%, #1717174d 1px, #0000 1px), radial-gradient(circle at 41% 62%, #1717174d 1px, #0000 1px), radial-gradient(circle at 60% 40%, #17171733 1px, #0000 1px), radial-gradient(circle at 80% 70%, #1717174d 1px, #0000 1px), radial-gradient(circle at 15% 80%, #17171733 1px, #0000 1px);
+  background-image:
+    radial-gradient(circle at 10% 15%, #17171766 1px, #0000 1px), radial-gradient(
+      circle at 11% 15%,
+      #17171766 1px,
+      #0000 1px
+    ), radial-gradient(circle at 10% 16%, #17171766 1px, #0000 1px), radial-gradient(
+      circle at 11% 16%,
+      #17171766 1px,
+      #0000 1px
+    ), radial-gradient(circle at 40% 60%, #1717174d 1px, #0000 1px), radial-gradient(
+      circle at 41% 60%,
+      #1717174d 1px,
+      #0000 1px
+    ), radial-gradient(circle at 39% 61%, #1717174d 1px, #0000 1px), radial-gradient(
+      circle at 42% 61%,
+      #1717174d 1px,
+      #0000 1px
+    ), radial-gradient(circle at 40% 62%, #1717174d 1px, #0000 1px), radial-gradient(
+      circle at 41% 62%,
+      #1717174d 1px,
+      #0000 1px
+    ), radial-gradient(circle at 60% 40%, #17171733 1px, #0000 1px), radial-gradient(
+      circle at 80% 70%,
+      #1717174d 1px,
+      #0000 1px
+    ), radial-gradient(circle at 15% 80%, #17171733 1px, #0000 1px);
 }
 
 @supports (color: color-mix(in lab, red, red)) {
   .dark .conway-background {
-    background-image: radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px), radial-gradient(circle at 11% 15%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px), radial-gradient(circle at 10% 16%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px), radial-gradient(circle at 11% 16%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px), radial-gradient(circle at 40% 60%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px), radial-gradient(circle at 41% 60%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px), radial-gradient(circle at 39% 61%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px), radial-gradient(circle at 42% 61%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px), radial-gradient(circle at 40% 62%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px), radial-gradient(circle at 41% 62%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px), radial-gradient(circle at 60% 40%, color-mix(in srgb, var(--color-primary) 20%, transparent) 1px, transparent 1px), radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--color-primary) 30%, transparent) 1px, transparent 1px), radial-gradient(circle at 15% 80%, color-mix(in srgb, var(--color-primary) 20%, transparent) 1px, transparent 1px);
+    background-image:
+      radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px), radial-gradient(
+        circle at 11% 15%,
+        color-mix(in srgb, var(--color-primary) 40%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 10% 16%,
+        color-mix(in srgb, var(--color-primary) 40%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 11% 16%,
+        color-mix(in srgb, var(--color-primary) 40%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 40% 60%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 41% 60%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 39% 61%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 42% 61%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 40% 62%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 41% 62%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 60% 40%,
+        color-mix(in srgb, var(--color-primary) 20%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 80% 70%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) 1px,
+        transparent 1px
+      ), radial-gradient(
+        circle at 15% 80%,
+        color-mix(in srgb, var(--color-primary) 20%, transparent) 1px,
+        transparent 1px
+      );
   }
 }
 
 .dark .conway-background {
-  background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px, 25px 25px, 25px 25px, 25px 25px, 25px 25px, 25px 25px, 25px 25px, 30px 30px, 35px 35px, 28px 28px;
+  background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px, 25px 25px, 25px 25px, 25px 25px, 25px 25px, 25px 25px,
+    25px 25px, 30px 30px, 35px 35px, 28px 28px;
 }
 
 .conway-background {
@@ -2197,7 +2340,7 @@
 }
 
 .prose h2 {
-  border-bottom: 1px solid hsl(var(--color-muted-foreground) / .3);
+  border-bottom: 1px solid hsl(var(--color-muted-foreground) / 0.3);
   padding-bottom: .3rem;
 }
 
@@ -2315,7 +2458,8 @@
   }
 }
 
-.prose h5, .prose h6 {
+.prose h5,
+.prose h6 {
   margin-top: calc(var(--spacing) * 3);
   margin-bottom: calc(var(--spacing) * 1.5);
   font-size: var(--text-xs);
@@ -2326,45 +2470,52 @@
 }
 
 @media (min-width: 40rem) {
-  .prose h5, .prose h6 {
+  .prose h5,
+  .prose h6 {
     margin-top: calc(var(--spacing) * 3.5);
   }
 }
 
 @media (min-width: 40rem) {
-  .prose h5, .prose h6 {
+  .prose h5,
+  .prose h6 {
     margin-bottom: calc(var(--spacing) * 2);
   }
 }
 
 @media (min-width: 40rem) {
-  .prose h5, .prose h6 {
+  .prose h5,
+  .prose h6 {
     font-size: var(--text-sm);
     line-height: var(--tw-leading, var(--text-sm--line-height));
   }
 }
 
 @media (min-width: 48rem) {
-  .prose h5, .prose h6 {
+  .prose h5,
+  .prose h6 {
     margin-top: calc(var(--spacing) * 4);
   }
 }
 
 @media (min-width: 48rem) {
-  .prose h5, .prose h6 {
+  .prose h5,
+  .prose h6 {
     margin-bottom: calc(var(--spacing) * 2);
   }
 }
 
 @media (min-width: 48rem) {
-  .prose h5, .prose h6 {
+  .prose h5,
+  .prose h6 {
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
   }
 }
 
 @media (min-width: 64rem) {
-  .prose h5, .prose h6 {
+  .prose h5,
+  .prose h6 {
     font-size: var(--text-lg);
     line-height: var(--tw-leading, var(--text-lg--line-height));
   }
@@ -2382,7 +2533,8 @@
   text-decoration-line: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
-  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+    --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
   transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
   transition-duration: var(--tw-duration, var(--default-transition-duration));
 }
@@ -2399,7 +2551,8 @@
   }
 }
 
-.prose ul, .prose ol {
+.prose ul,
+.prose ol {
   margin-bottom: calc(var(--spacing) * 6);
   padding-left: calc(var(--spacing) * 6);
 }
@@ -2569,7 +2722,7 @@
   -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
   backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
   padding-inline: calc(var(--spacing) * 1);
-  padding-block: calc(var(--spacing) * .5);
+  padding-block: calc(var(--spacing) * 0.5);
   font-size: var(--text-xs);
   line-height: var(--tw-leading, var(--text-xs--line-height));
   transition-property: all;
@@ -2728,7 +2881,8 @@
   text-align: center;
 }
 
-.prose pre.ascii-art, .prose .ascii-art {
+.prose pre.ascii-art,
+.prose .ascii-art {
   font-family: var(--font-mono);
   white-space: pre;
   color: var(--color-foreground);
@@ -2736,10 +2890,11 @@
   letter-spacing: 0;
 }
 
-.light code[class*="language-"], .light pre[class*="language-"] {
+.light code[class*="language-"],
+.light pre[class*="language-"] {
   color: #000;
   background: none;
-  font-family: Consolas, Monaco, Andale Mono, Ubuntu Mono, monospace;
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
   font-size: 1em;
   text-align: left;
   white-space: pre;
@@ -2751,7 +2906,10 @@
   hyphens: none;
 }
 
-.light .token.comment, .light .token.prolog, .light .token.doctype, .light .token.cdata {
+.light .token.comment,
+.light .token.prolog,
+.light .token.doctype,
+.light .token.cdata {
   color: #708090;
 }
 
@@ -2759,30 +2917,49 @@
   color: #999;
 }
 
-.light .token.property, .light .token.tag, .light .token.boolean, .light .token.number, .light .token.constant, .light .token.symbol, .light .token.deleted {
+.light .token.property,
+.light .token.tag,
+.light .token.boolean,
+.light .token.number,
+.light .token.constant,
+.light .token.symbol,
+.light .token.deleted {
   color: #905;
 }
 
-.light .token.selector, .light .token.attr-name, .light .token.string, .light .token.char, .light .token.builtin, .light .token.inserted {
+.light .token.selector,
+.light .token.attr-name,
+.light .token.string,
+.light .token.char,
+.light .token.builtin,
+.light .token.inserted {
   color: #690;
 }
 
-.light .token.operator, .light .token.entity, .light .token.url, .light .language-css .token.string, .light .style .token.string {
+.light .token.operator,
+.light .token.entity,
+.light .token.url,
+.light .language-css .token.string,
+.light .style .token.string {
   color: #9a6e3a;
 }
 
-.light .token.atrule, .light .token.attr-value, .light .token.keyword {
+.light .token.atrule,
+.light .token.attr-value,
+.light .token.keyword {
   color: #07a;
 }
 
-.light .token.function, .light .token.class-name {
+.light .token.function,
+.light .token.class-name {
   color: #dd4a68;
 }
 
-.dark code[class*="language-"], .dark pre[class*="language-"] {
+.dark code[class*="language-"],
+.dark pre[class*="language-"] {
   color: #ccc;
   background: none;
-  font-family: Consolas, Monaco, Andale Mono, Ubuntu Mono, monospace;
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
   font-size: 1em;
   text-align: left;
   white-space: pre;
@@ -2794,7 +2971,10 @@
   hyphens: none;
 }
 
-.dark .token.comment, .dark .token.prolog, .dark .token.doctype, .dark .token.cdata {
+.dark .token.comment,
+.dark .token.prolog,
+.dark .token.doctype,
+.dark .token.cdata {
   color: #999;
 }
 
@@ -2802,23 +2982,39 @@
   color: #ccc;
 }
 
-.dark .token.property, .dark .token.tag, .dark .token.boolean, .dark .token.number, .dark .token.constant, .dark .token.symbol, .dark .token.deleted {
+.dark .token.property,
+.dark .token.tag,
+.dark .token.boolean,
+.dark .token.number,
+.dark .token.constant,
+.dark .token.symbol,
+.dark .token.deleted {
   color: #f92672;
 }
 
-.dark .token.selector, .dark .token.attr-name, .dark .token.string, .dark .token.char, .dark .token.builtin, .dark .token.inserted {
+.dark .token.selector,
+.dark .token.attr-name,
+.dark .token.string,
+.dark .token.char,
+.dark .token.builtin,
+.dark .token.inserted {
   color: #a6e22e;
 }
 
-.dark .token.operator, .dark .token.entity, .dark .token.url {
+.dark .token.operator,
+.dark .token.entity,
+.dark .token.url {
   color: #ccc;
 }
 
-.dark .token.atrule, .dark .token.attr-value, .dark .token.keyword {
+.dark .token.atrule,
+.dark .token.attr-value,
+.dark .token.keyword {
   color: #66d9ef;
 }
 
-.dark .token.function, .dark .token.class-name {
+.dark .token.function,
+.dark .token.class-name {
   color: #e6db74;
 }
 
@@ -2842,27 +3038,27 @@
 
 @property --tw-rotate-x {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-rotate-y {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-rotate-z {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-skew-x {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-skew-y {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-space-y-reverse {
@@ -2879,17 +3075,17 @@
 
 @property --tw-leading {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-font-weight {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-tracking {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-shadow {
@@ -2900,7 +3096,7 @@
 
 @property --tw-shadow-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-shadow-alpha {
@@ -2917,7 +3113,7 @@
 
 @property --tw-inset-shadow-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-inset-shadow-alpha {
@@ -2928,7 +3124,7 @@
 
 @property --tw-ring-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-ring-shadow {
@@ -2939,7 +3135,7 @@
 
 @property --tw-inset-ring-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-inset-ring-shadow {
@@ -2950,7 +3146,7 @@
 
 @property --tw-ring-inset {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-ring-offset-width {
@@ -2973,57 +3169,57 @@
 
 @property --tw-blur {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-brightness {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-contrast {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-grayscale {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-hue-rotate {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-invert {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-opacity {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-saturate {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-sepia {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-drop-shadow {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-drop-shadow-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-drop-shadow-alpha {
@@ -3034,57 +3230,57 @@
 
 @property --tw-drop-shadow-size {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-blur {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-brightness {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-contrast {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-grayscale {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-hue-rotate {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-invert {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-opacity {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-saturate {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-backdrop-sepia {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-duration {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-scale-x {
@@ -3113,13 +3309,17 @@
 
 @keyframes pulse {
   50% {
-    opacity: .5;
+    opacity: 0.5;
   }
 }
 
 @layer properties {
-  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
-    *, :before, :after, ::backdrop {
+  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or
+    ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+    *,
+    :before,
+    :after,
+    ::backdrop {
       --tw-translate-x: 0;
       --tw-translate-y: 0;
       --tw-translate-z: 0;
