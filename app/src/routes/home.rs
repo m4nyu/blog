@@ -11,13 +11,9 @@ use crate::components::ui::life::Life;
 
 #[server(GetPosts, "/api")]
 pub async fn get_posts() -> Result<Vec<crate::components::post::BlogPost>, ServerFnError> {
-    eprintln!("Server function get_posts called");
-    let result = get_all_posts().await;
-    match &result {
-        Ok(posts) => eprintln!("Successfully loaded {} posts", posts.len()),
-        Err(e) => eprintln!("Error loading posts: {}", e),
-    }
-    result.map_err(|e| ServerFnError::ServerError(e.to_string()))
+    get_all_posts()
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))
 }
 
 #[component]
