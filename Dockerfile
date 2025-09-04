@@ -58,8 +58,8 @@ WORKDIR /app
 
 # Copy binary and assets with proper ownership
 COPY --from=builder --chown=appuser:appuser /app/target/server/blog ./blog
-# Create app directory and copy posts to maintain the expected app/posts path structure
-COPY --from=builder --chown=appuser:appuser /app/app/posts ./app/posts  
+# Create app directory structure and copy posts directory (even if empty)
+RUN mkdir -p ./app/posts  
 # Copy the compiled site artifacts (CSS, JS, WASM)
 COPY --from=builder --chown=appuser:appuser /app/target/site ./site
 # Copy public assets (favicon, etc.) to the site root so they're served at root paths
