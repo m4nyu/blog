@@ -1,4 +1,4 @@
-<div align="center">
+<div style="text-align: center;">
 
 <pre style="background: transparent;">
 ██████╗ ██╗      ██████╗  ██████╗ 
@@ -36,48 +36,32 @@ cargo leptos watch
 
 ## ▲ Deploy
 
-### Prerequisites (one-time setup)
-```bash
-# Install Pulumi CLI
-curl -fsSL https://get.pulumi.com | sh
+### Deploy to Render.com
 
-# Configure AWS
-aws configure
+1. **Create a New Web Service on Render**
+   - Connect GitHub repository
+   - Choose "Docker" as the environment
 
-# Initialize Pulumi stack
-pulumi stack init production
-```
+2. **Configure Build & Deploy Settings**
+   - **Build Command**: (uses Dockerfile automatically)
+   - **Start Command**: `./target/release/tailwind`
+   - **Environment**: `Docker`
+   - **Instance Type**: Free or paid tier as needed
 
-### Deploy to AWS (Multi-Region + CloudFront)
-```bash
-# Single command deployment
-bun run deploy
-```
+3. **Set Environment Variables** (if needed)
+   ```
+   LEPTOS_SITE_ADDR=0.0.0.0:3000
+   RUST_LOG=info
+   ```
 
-This will:
-- ✅ Build your Leptos blog
-- ✅ Deploy to US West & EU West regions
-- ✅ Set up global CloudFront CDN
-- ✅ Provide enterprise-grade security
+4. **Deploy**
+   - Render will automatically build and deploy the blog
+   - The blog will be available at `https://[app-name].onrender.com`
 
-### Optional: Add Custom Domain + Cloudflare Security
-```bash
-pulumi config set blog:domain yourdomain.com
-pulumi config set cloudflare:zoneId YOUR_ZONE_ID
-pulumi config set cloudflare:apiToken YOUR_TOKEN --secret
-bun run deploy
-```
-
-### Individual Operations
-```bash
-bun run preview      # Preview infrastructure changes
-bun run sync         # Sync files to S3 buckets  
-bun run invalidate   # Clear CloudFront cache
-```
 
 ## ■ Adding Posts
 
-Create markdown files in `content/` directory:
+Create markdown files in `posts/` directory:
 
 ```markdown
 ---
@@ -91,7 +75,7 @@ tags: ["rust", "web"]
 
 ## Images
 ![Alt text](./image.png)
-- Place image files in content/ alongside the .md file
+- Place image files in posts/ alongside the .md file
 - Supports: png, jpg, jpeg, gif, svg, webp
 
 ## Videos  
@@ -109,12 +93,14 @@ console.log("This is executable!");
 ## ◆ Structure
 
 ```
-content/         # Your blog posts and media
+posts/           # Blog posts and media
 ├── post-1.md
 ├── post-2.md
 └── image.png
 
-src/             # Blog engine (Rust/Leptos)
-public/          # Static assets
+app/             # Blog application code
+├── src/         # Rust/Leptos source code
+│   └── styles/  # CSS styles (Tailwind + global.css)
+└── public/      # Static assets
 ```
 
