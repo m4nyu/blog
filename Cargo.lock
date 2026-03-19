@@ -405,6 +405,7 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "futures",
+ "getrandom 0.2.16",
  "gloo-timers",
  "gloo-utils",
  "gray_matter",

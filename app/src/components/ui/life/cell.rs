@@ -1,4 +1,5 @@
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[repr(u8)]
 pub enum CellState {
     Dead,
     Alive,
