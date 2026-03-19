@@ -1,36 +1,26 @@
 use super::cell::Cell;
-#[cfg(feature = "hydrate")]
-use super::cell::CellState;
 
-#[cfg(feature = "hydrate")]
-use js_sys::Math;
+use rand::Rng;
 
 // Leptos component imports
 use leptos::*;
-
-#[cfg(feature = "hydrate")]
-use super::{get_theme_colors, CanvasConfig, CanvasRenderer};
-#[cfg(feature = "hydrate")]
-use leptos_dom::helpers::IntervalHandle;
-#[cfg(feature = "hydrate")]
-use wasm_bindgen::JsCast;
-#[cfg(feature = "hydrate")]
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 #[derive(Clone, Debug)]
 pub struct Universe {
     width: usize,
     height: usize,
     cells: Vec<Cell>,
+    scratch: Vec<Cell>,
 }
 
 impl Universe {
     pub fn new(width: usize, height: usize) -> Self {
-        let cells = vec![Cell::default(); width * height];
+        let size = width * height;
         Self {
             width,
             height,
-            cells,
+            cells: vec![Cell::default(); size],
+            scratch: vec![Cell::default(); size],
         }
     }
 
@@ -46,18 +36,13 @@ impl Universe {
         &self.cells
     }
 
-    pub fn cells_mut(&mut self) -> &mut [Cell] {
-        &mut self.cells
-    }
-
     fn get_index(&self, row: usize, col: usize) -> usize {
         row * self.width + col
     }
 
     pub fn get_cell(&self, row: usize, col: usize) -> Cell {
         if row < self.height && col < self.width {
-            let idx = self.get_index(row, col);
-            self.cells[idx]
+            self.cells[self.get_index(row, col)]
         } else {
             Cell::dead()
         }
@@ -89,154 +74,112 @@ impl Universe {
         }
     }
 
-    #[allow(dead_code)]
-    fn live_neighbor_count(&self, row: usize, col: usize) -> u8 {
-        let mut count = 0;
+    #[inline]
+    fn count_neighbors(&self, row: usize, col: usize) -> u8 {
+        let width = self.width;
+        let idx = row * width + col;
+        let mut live_neighbors = 0u8;
 
-        // Use wrapping arithmetic for toroidal topology
-        let deltas = [
-            (-1, -1),
-            (-1, 0),
-            (-1, 1),
-            (0, -1),
-            (0, 1),
-            (1, -1),
-            (1, 0),
-            (1, 1),
-        ];
-
-        for &(dr, dc) in &deltas {
-            let neighbor_row = (row as isize + dr + self.height as isize) as usize % self.height;
-            let neighbor_col = (col as isize + dc + self.width as isize) as usize % self.width;
-
-            if self.get_cell(neighbor_row, neighbor_col).is_alive() {
-                count += 1;
+        if row > 0 {
+            if col > 0 && self.cells[idx - width - 1].is_alive() {
+                live_neighbors += 1;
+            }
+            if self.cells[idx - width].is_alive() {
+                live_neighbors += 1;
+            }
+            if col < width - 1 && self.cells[idx - width + 1].is_alive() {
+                live_neighbors += 1;
             }
         }
 
-        count
+        if col > 0 && self.cells[idx - 1].is_alive() {
+            live_neighbors += 1;
+        }
+        if col < width - 1 && self.cells[idx + 1].is_alive() {
+            live_neighbors += 1;
+        }
+
+        if row < self.height - 1 {
+            if col > 0 && self.cells[idx + width - 1].is_alive() {
+                live_neighbors += 1;
+            }
+            if self.cells[idx + width].is_alive() {
+                live_neighbors += 1;
+            }
+            if col < width - 1 && self.cells[idx + width + 1].is_alive() {
+                live_neighbors += 1;
+            }
+        }
+
+        live_neighbors
     }
 
     pub fn tick(&mut self) {
-        // HYPER-OPTIMIZED tick with pre-allocated buffer and batch operations
-        static mut TEMP_BUFFER: Vec<Cell> = Vec::new();
+        // Copy current state to scratch buffer
+        self.scratch.copy_from_slice(&self.cells);
 
-        unsafe {
-            // Reuse buffer to avoid allocations (major performance gain)
-            let temp_buffer = &raw mut TEMP_BUFFER;
-            if (&*temp_buffer).len() != self.cells.len() {
-                (&mut *temp_buffer).resize(self.cells.len(), Cell::default());
+        let width = self.width;
+        let height = self.height;
+
+        for row in 0..height {
+            for col in 0..width {
+                let idx = row * width + col;
+                let is_alive = self.cells[idx].is_alive();
+                let live_neighbors = self.count_neighbors(row, col);
+
+                let next_alive = match (is_alive, live_neighbors) {
+                    (true, 2) | (true, 3) => true,
+                    (false, 3) => true,
+                    _ => false,
+                };
+
+                self.scratch[idx] = if next_alive {
+                    Cell::alive()
+                } else {
+                    Cell::dead()
+                };
             }
-
-            // Batch copy current state to temp buffer
-            (&mut *temp_buffer).copy_from_slice(&self.cells);
-
-            // ULTRA-FAST computation with optimized loops
-            let width = self.width;
-            let height = self.height;
-
-            // Process in cache-friendly order with minimal function calls
-            for row in 0..height {
-                let row_offset = row * width;
-
-                for col in 0..width {
-                    let idx = row_offset + col;
-                    let is_alive = self.cells[idx].is_alive();
-
-                    // OPTIMIZED neighbor counting with bounds checking eliminated
-                    let mut live_neighbors = 0u8;
-
-                    // Unrolled neighbor loop for maximum performance
-                    if row > 0 {
-                        if col > 0 && self.cells[idx - width - 1].is_alive() {
-                            live_neighbors += 1;
-                        }
-                        if self.cells[idx - width].is_alive() {
-                            live_neighbors += 1;
-                        }
-                        if col < width - 1 && self.cells[idx - width + 1].is_alive() {
-                            live_neighbors += 1;
-                        }
-                    }
-
-                    if col > 0 && self.cells[idx - 1].is_alive() {
-                        live_neighbors += 1;
-                    }
-                    if col < width - 1 && self.cells[idx + 1].is_alive() {
-                        live_neighbors += 1;
-                    }
-
-                    if row < height - 1 {
-                        if col > 0 && self.cells[idx + width - 1].is_alive() {
-                            live_neighbors += 1;
-                        }
-                        if self.cells[idx + width].is_alive() {
-                            live_neighbors += 1;
-                        }
-                        if col < width - 1 && self.cells[idx + width + 1].is_alive() {
-                            live_neighbors += 1;
-                        }
-                    }
-
-                    // Optimized state transition with lookup table approach
-                    let next_alive = match (is_alive, live_neighbors) {
-                        (true, 2) | (true, 3) => true, // Survive
-                        (false, 3) => true,            // Birth
-                        _ => false,                    // Die or stay dead
-                    };
-
-                    (&mut *temp_buffer)[idx] = if next_alive {
-                        Cell::alive()
-                    } else {
-                        Cell::dead()
-                    };
-                }
-            }
-
-            // Single memory swap (much faster than clone)
-            std::mem::swap(&mut self.cells, &mut *temp_buffer);
         }
+
+        // Swap cells and scratch
+        std::mem::swap(&mut self.cells, &mut self.scratch);
     }
 
-    #[cfg(feature = "hydrate")]
     pub fn randomize(&mut self, probability: f64) {
-        let mut alive_count = 0;
-        let total_cells = self.width * self.height;
-
-        // Fast randomization
-        for cell in self.cells.iter_mut() {
-            if Math::random() < probability {
-                cell.set_state(CellState::Alive);
-                alive_count += 1;
+        let mut rng = rand::thread_rng();
+        for cell in &mut self.cells {
+            if rng.gen_bool(probability.clamp(0.0, 1.0)) {
+                cell.set_alive();
             } else {
-                cell.set_state(CellState::Dead);
-            }
-        }
-
-        // Ensure minimum population for visual interest
-        if alive_count < 3 && total_cells > 10 {
-            let min_cells = (total_cells / 50).max(3).min(10);
-            for _ in alive_count..min_cells {
-                let idx = (Math::random() * total_cells as f64) as usize;
-                if idx < self.cells.len() {
-                    self.cells[idx].set_state(CellState::Alive);
-                    alive_count += 1;
-                }
+                cell.set_dead();
             }
         }
     }
 
-    #[cfg(not(feature = "hydrate"))]
-    pub fn randomize(&mut self, _probability: f64) {
-        // No-op for SSR - could use a deterministic pattern instead
-        self.add_glider(5, 5);
-        self.add_blinker(15, 15);
+    pub fn resize_and_redistribute(&mut self, new_width: usize, new_height: usize, density: f64) {
+        if self.width == new_width && self.height == new_height {
+            return;
+        }
+
+        self.width = new_width;
+        self.height = new_height;
+        let size = new_width * new_height;
+        self.cells = vec![Cell::dead(); size];
+        self.scratch = vec![Cell::dead(); size];
+
+        self.randomize(density);
+
+        if new_width > 15 && new_height > 15 {
+            self.add_glider(5, 5);
+            if new_width > 30 {
+                self.add_blinker(new_width - 10, 8);
+            }
+        }
     }
 
     // Predefined patterns
     pub fn add_glider(&mut self, start_row: usize, start_col: usize) {
         let pattern = [(0, 1), (1, 2), (2, 0), (2, 1), (2, 2)];
-
         for &(dr, dc) in &pattern {
             let row = start_row + dr;
             let col = start_col + dc;
@@ -248,7 +191,6 @@ impl Universe {
 
     pub fn add_blinker(&mut self, start_row: usize, start_col: usize) {
         let pattern = [(0, 0), (0, 1), (0, 2)];
-
         for &(dr, dc) in &pattern {
             let row = start_row + dr;
             let col = start_col + dc;
@@ -260,7 +202,6 @@ impl Universe {
 
     pub fn add_toad(&mut self, start_row: usize, start_col: usize) {
         let pattern = [(0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2)];
-
         for &(dr, dc) in &pattern {
             let row = start_row + dr;
             let col = start_col + dc;
@@ -272,16 +213,9 @@ impl Universe {
 
     pub fn add_beacon(&mut self, start_row: usize, start_col: usize) {
         let pattern = [
-            (0, 0),
-            (0, 1),
-            (1, 0),
-            (1, 1),
-            (2, 2),
-            (2, 3),
-            (3, 2),
-            (3, 3),
+            (0, 0), (0, 1), (1, 0), (1, 1),
+            (2, 2), (2, 3), (3, 2), (3, 3),
         ];
-
         for &(dr, dc) in &pattern {
             let row = start_row + dr;
             let col = start_col + dc;
@@ -293,58 +227,17 @@ impl Universe {
 
     pub fn add_pulsar(&mut self, start_row: usize, start_col: usize) {
         let pattern = [
-            // Top
-            (2, 4),
-            (2, 5),
-            (2, 6),
-            (2, 10),
-            (2, 11),
-            (2, 12),
-            (4, 2),
-            (4, 7),
-            (4, 9),
-            (4, 14),
-            (5, 2),
-            (5, 7),
-            (5, 9),
-            (5, 14),
-            (6, 2),
-            (6, 7),
-            (6, 9),
-            (6, 14),
-            (7, 4),
-            (7, 5),
-            (7, 6),
-            (7, 10),
-            (7, 11),
-            (7, 12),
-            // Bottom
-            (9, 4),
-            (9, 5),
-            (9, 6),
-            (9, 10),
-            (9, 11),
-            (9, 12),
-            (10, 2),
-            (10, 7),
-            (10, 9),
-            (10, 14),
-            (11, 2),
-            (11, 7),
-            (11, 9),
-            (11, 14),
-            (12, 2),
-            (12, 7),
-            (12, 9),
-            (12, 14),
-            (14, 4),
-            (14, 5),
-            (14, 6),
-            (14, 10),
-            (14, 11),
-            (14, 12),
+            (2, 4), (2, 5), (2, 6), (2, 10), (2, 11), (2, 12),
+            (4, 2), (4, 7), (4, 9), (4, 14),
+            (5, 2), (5, 7), (5, 9), (5, 14),
+            (6, 2), (6, 7), (6, 9), (6, 14),
+            (7, 4), (7, 5), (7, 6), (7, 10), (7, 11), (7, 12),
+            (9, 4), (9, 5), (9, 6), (9, 10), (9, 11), (9, 12),
+            (10, 2), (10, 7), (10, 9), (10, 14),
+            (11, 2), (11, 7), (11, 9), (11, 14),
+            (12, 2), (12, 7), (12, 9), (12, 14),
+            (14, 4), (14, 5), (14, 6), (14, 10), (14, 11), (14, 12),
         ];
-
         for &(dr, dc) in &pattern {
             let row = start_row + dr;
             let col = start_col + dc;
@@ -358,7 +251,6 @@ impl Universe {
         if self.width != previous.width || self.height != previous.height {
             return false;
         }
-
         self.cells
             .iter()
             .zip(previous.cells.iter())
@@ -368,312 +260,272 @@ impl Universe {
     pub fn count_living_cells(&self) -> usize {
         self.cells.iter().filter(|cell| cell.is_alive()).count()
     }
-
-    #[cfg(feature = "hydrate")]
-    pub fn resize_and_redistribute(&mut self, new_width: usize, new_height: usize, density: f64) {
-        if self.width == new_width && self.height == new_height {
-            return; // No change needed
-        }
-
-        // Fast resize: just clear and regenerate
-        self.width = new_width;
-        self.height = new_height;
-        self.cells = vec![Cell::dead(); new_width * new_height];
-
-        // Quick randomization
-        self.randomize(density);
-
-        // Add guaranteed patterns for visual interest
-        if new_width > 15 && new_height > 15 {
-            self.add_glider(5, 5);
-            if new_width > 30 {
-                self.add_blinker(new_width - 10, 8);
-            }
-        }
-    }
-
-    #[cfg(not(feature = "hydrate"))]
-    pub fn resize_and_redistribute(&mut self, new_width: usize, new_height: usize, _density: f64) {
-        // Simple resize for SSR
-        self.width = new_width;
-        self.height = new_height;
-        self.cells = vec![Cell::dead(); new_width * new_height];
-
-        // Add some patterns
-        if new_width > 20 && new_height > 20 {
-            self.add_glider(5, 5);
-            self.add_blinker(15, 15);
-        }
-    }
 }
 
-// Life Component for background animation
+// ─── Hydrate (WASM) Life component ──────────────────────────────────────────
+
+#[cfg(feature = "hydrate")]
+fn is_dark_mode() -> bool {
+    web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.document_element())
+        .map_or(false, |el| el.class_list().contains("dark"))
+}
+
 #[cfg(feature = "hydrate")]
 #[component]
 pub fn Life(animation_speed: RwSignal<u64>, population_density: RwSignal<f64>) -> impl IntoView {
-    leptos::logging::log!("Life component initializing");
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use wasm_bindgen::prelude::*;
+    use wasm_bindgen::JsCast;
+    use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, MutationObserver, MutationObserverInit};
+
+    use super::{CanvasConfig, CanvasRenderer};
 
     let canvas_ref = NodeRef::<leptos::html::Canvas>::new();
-    let universe = RwSignal::new(None::<Universe>);
-    let viewport_size = RwSignal::new((2560, 1440)); // Default size
+    let cell_size = 12.0_f64;
 
-    // Fixed cell size - bigger pixels
-    let cell_size = 12.0;
+    // ── Shared state via Rc<RefCell<..>> ──
 
-    // Create canvas config and renderer using the existing canvas module
-    let (bg_color, cell_color) = get_theme_colors();
-    leptos::logging::log!("Theme colors - bg: {}, cell: {}", bg_color, cell_color);
-    let config = CanvasConfig::with_colors(cell_size, &cell_color, &bg_color);
-    let renderer = CanvasRenderer::new(config);
+    let universe = Rc::new(RefCell::new({
+        let (gw, gh, _cw, _ch) = viewport_grid_size(cell_size);
+        let mut u = Universe::new(gw, gh);
+        u.randomize(population_density.get_untracked());
+        u.add_glider(5, 5);
+        u.add_blinker(10, 8);
+        u
+    }));
 
-    // Grid size calculation
-    let calculate_grid_size = move || -> (usize, usize) {
-        if let Some(window) = web_sys::window() {
-            let width = window.inner_width().unwrap().as_f64().unwrap();
-            let height = window.inner_height().unwrap().as_f64().unwrap();
+    let renderer = Rc::new(RefCell::new(CanvasRenderer::new(
+        CanvasConfig::for_theme(cell_size, is_dark_mode()),
+    )));
 
-            let grid_width = (width / cell_size).ceil() as usize;
-            let grid_height = (height / cell_size).ceil() as usize;
+    let cached_ctx: Rc<RefCell<Option<CanvasRenderingContext2d>>> = Rc::new(RefCell::new(None));
+    let needs_render = Rc::new(RefCell::new(true));
+    let canvas_dirty = Rc::new(RefCell::new(true));
+    let last_tick = Rc::new(RefCell::new(0.0_f64));
 
-            viewport_size.set((width as u32, height as u32));
+    // ── requestAnimationFrame loop ──
 
-            (grid_width, grid_height)
-        } else {
-            (100, 60)
-        }
-    };
+    let raf_closure: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
+    let raf_id: Rc<RefCell<i32>> = Rc::new(RefCell::new(0));
 
-    // Universe initialization - one time only
-    create_effect(move |_| {
-        if universe.get_untracked().is_none() {
-            let (grid_width, grid_height) = calculate_grid_size();
-            let density = population_density.get_untracked();
+    {
+        let raf_closure_clone = raf_closure.clone();
+        let raf_id_clone = raf_id.clone();
+        let universe = universe.clone();
+        let renderer = renderer.clone();
+        let cached_ctx = cached_ctx.clone();
+        let needs_render = needs_render.clone();
+        let canvas_dirty = canvas_dirty.clone();
+        let last_tick = last_tick.clone();
 
-            leptos::logging::log!(
-                "Initializing universe: {}x{} with density {}",
-                grid_width,
-                grid_height,
-                density
-            );
+        let closure = Closure::wrap(Box::new(move |timestamp: f64| {
+            let speed = animation_speed.get_untracked() as f64;
+            let elapsed = timestamp - *last_tick.borrow();
 
-            let mut new_universe = Universe::new(grid_width, grid_height);
-            new_universe.randomize(density);
+            let mut ticked = false;
+            if elapsed >= speed {
+                *last_tick.borrow_mut() = timestamp;
+                universe.borrow_mut().tick();
+                ticked = true;
+            }
 
-            // Add some guaranteed patterns for visual interest
-            new_universe.add_glider(5, 5);
-            new_universe.add_blinker(10, 8);
-
-            universe.set(Some(new_universe));
-            leptos::logging::log!("Universe initialized successfully");
-        }
-    });
-
-    // Window resize handling
-    create_effect(move |_| {
-        if let Some(window) = web_sys::window() {
-            let resize_handler =
-                wasm_bindgen::closure::Closure::wrap(Box::new(move |_event: web_sys::Event| {
-                    let (new_grid_width, new_grid_height) = calculate_grid_size();
-                    let density = population_density.get_untracked();
-
-                    universe.update(|u| {
-                        if let Some(ref mut universe_ref) = u {
-                            universe_ref.resize_and_redistribute(
-                                new_grid_width,
-                                new_grid_height,
-                                density,
-                            );
+            if ticked || *needs_render.borrow() {
+                // Obtain or cache the 2D context
+                let mut ctx_ref = cached_ctx.borrow_mut();
+                if ctx_ref.is_none() {
+                    if let Some(canvas) = leptos::document()
+                        .query_selector("canvas")
+                        .ok()
+                        .flatten()
+                    {
+                        let canvas_el: HtmlCanvasElement = canvas.unchecked_into();
+                        if let Ok(Some(ctx)) = canvas_el.get_context("2d") {
+                            if let Ok(ctx2d) = ctx.dyn_into::<CanvasRenderingContext2d>() {
+                                *ctx_ref = Some(ctx2d);
+                            }
                         }
-                    });
-                }) as Box<dyn FnMut(_)>);
-
-            let _ = window.add_event_listener_with_callback(
-                "resize",
-                resize_handler.as_ref().unchecked_ref(),
-            );
-            resize_handler.forget();
-        }
-    });
-
-    // Density change tracking
-    create_effect(move |previous_density: Option<f64>| {
-        let current_density = population_density.get();
-
-        // Skip the first initialization run
-        if let Some(prev_density) = previous_density {
-            if current_density != prev_density && universe.get_untracked().is_some() {
-                universe.update(|u| {
-                    if let Some(ref mut universe_ref) = u {
-                        universe_ref.clear();
-                        universe_ref.randomize(current_density);
-                        universe_ref.add_glider(5, 5);
-                        universe_ref.add_blinker(10, 8);
                     }
-                });
-            }
-        }
+                }
 
-        current_density
-    });
-
-    // Animation with speed control
-    let animation_handle = RwSignal::new(None::<IntervalHandle>);
-
-    let restart_animation = move || {
-        // Clear existing animation
-        animation_handle.update(|handle| {
-            if let Some(h) = handle.take() {
-                h.clear();
-            }
-        });
-
-        // Start new animation with current speed
-        let speed = animation_speed.get_untracked();
-
-        let new_handle = leptos::set_interval_with_handle(
-            move || {
-                universe.update(|u| {
-                    if let Some(ref mut u) = u {
-                        u.tick();
+                if let Some(ctx) = ctx_ref.as_ref() {
+                    // Set canvas dimensions only when dirty
+                    if *canvas_dirty.borrow() {
+                        let (_, _, cw, ch) = viewport_grid_size(cell_size);
+                        if let Some(canvas) = leptos::document()
+                            .query_selector("canvas")
+                            .ok()
+                            .flatten()
+                        {
+                            let canvas_el: HtmlCanvasElement = canvas.unchecked_into();
+                            canvas_el.set_width(cw);
+                            canvas_el.set_height(ch);
+                            let style = canvas_el.style();
+                            let _ = style.set_property("width", &format!("{cw}px"));
+                            let _ = style.set_property("height", &format!("{ch}px"));
+                        }
+                        *canvas_dirty.borrow_mut() = false;
                     }
-                });
-            },
-            std::time::Duration::from_millis(speed),
-        )
-        .expect("Failed to create animation");
 
-        animation_handle.set(Some(new_handle));
-    };
+                    let uni = universe.borrow();
+                    let (_, _, cw, ch) = viewport_grid_size(cell_size);
+                    renderer.borrow_mut().draw(ctx, &uni, cw, ch);
+                }
 
-    // Watch for speed changes
-    create_effect(move |_| {
-        let _speed = animation_speed.get();
-        restart_animation();
-    });
+                *needs_render.borrow_mut() = false;
+            }
 
-    // Initial animation start
-    restart_animation();
+            // Schedule next frame
+            if let Some(ref cb) = *raf_closure_clone.borrow() {
+                if let Some(window) = web_sys::window() {
+                    if let Ok(id) = window.request_animation_frame(cb.as_ref().unchecked_ref()) {
+                        *raf_id_clone.borrow_mut() = id;
+                    }
+                }
+            }
+        }) as Box<dyn FnMut(f64)>);
 
-    // Track theme changes and update renderer
-    let theme_signal = RwSignal::new(false);
-    let renderer_signal = RwSignal::new(renderer);
+        *raf_closure.borrow_mut() = Some(closure);
+    }
 
-    // Check theme periodically and update renderer colors
-    let _theme_interval = leptos::set_interval_with_handle(
-        move || {
+    // Kick off the first frame
+    {
+        if let Some(ref cb) = *raf_closure.borrow() {
             if let Some(window) = web_sys::window() {
-                if let Some(document) = window.document() {
-                    if let Some(element) = document.document_element() {
-                        let is_dark = element.class_list().contains("dark");
-                        if theme_signal.get_untracked() != is_dark {
-                            theme_signal.set(is_dark);
-
-                            // Update renderer with new theme colors
-                            renderer_signal.update(|r| {
-                                r.update_theme(is_dark);
-                            });
-                        }
-                    }
+                if let Ok(id) = window.request_animation_frame(cb.as_ref().unchecked_ref()) {
+                    *raf_id.borrow_mut() = id;
                 }
             }
-        },
-        std::time::Duration::from_millis(500),
-    )
-    .expect("Failed to create theme check interval");
-
-    // Canvas drawing using the CanvasRenderer - redraw when content changes
-    create_effect(move |_| {
-        // Track universe, theme, and viewport changes
-        universe.track();
-        theme_signal.track();
-        viewport_size.track();
-
-        leptos::logging::log!("Canvas drawing effect triggered");
-
-        if let Some(canvas) = canvas_ref.get() {
-            let canvas_el: HtmlCanvasElement = (*canvas).clone().unchecked_into();
-            leptos::logging::log!(
-                "Canvas element found: {}x{}",
-                canvas_el.width(),
-                canvas_el.height()
-            );
-
-            // Get universe WITH tracking so we re-render on changes
-            if let Some(current_universe) = universe.get() {
-                leptos::logging::log!(
-                    "Drawing universe: {}x{}",
-                    current_universe.width(),
-                    current_universe.height()
-                );
-
-                // Get current viewport size
-                let (canvas_width, canvas_height) = viewport_size.get();
-
-                // Set canvas dimensions to match viewport
-                canvas_el.set_width(canvas_width);
-                canvas_el.set_height(canvas_height);
-
-                // Use the CanvasRenderer to draw the universe
-                if let Ok(Some(ctx)) = canvas_el.get_context("2d") {
-                    if let Ok(ctx) = ctx.dyn_into::<CanvasRenderingContext2d>() {
-                        let current_renderer = renderer_signal.get_untracked();
-
-                        // Use the CanvasRenderer setup_canvas method first
-                        current_renderer.setup_canvas(&canvas_el, &current_universe);
-
-                        // Clear canvas with background color
-                        ctx.clear_rect(0.0, 0.0, canvas_width as f64, canvas_height as f64);
-
-                        // Draw directly using the current universe
-                        current_renderer.draw(&ctx, &current_universe);
-                        leptos::logging::log!("Canvas drawing completed");
-                    } else {
-                        leptos::logging::log!("Failed to get 2D context");
-                    }
-                } else {
-                    leptos::logging::log!("Failed to get canvas context");
-                }
-            } else {
-                leptos::logging::log!("No universe available for drawing");
-            }
-        } else {
-            leptos::logging::log!("Canvas element not available");
         }
-    });
+    }
 
-    // Mouse handler for clicking to add cells
-    create_effect(move |_| {
+    // Cleanup rAF
+    {
+        let raf_closure = raf_closure.clone();
+        let raf_id = raf_id.clone();
+        on_cleanup(move || {
+            if let Some(window) = web_sys::window() {
+                window.cancel_animation_frame(*raf_id.borrow()).ok();
+            }
+            // Break Rc cycle
+            *raf_closure.borrow_mut() = None;
+        });
+    }
+
+    // ── Window resize listener ──
+    {
+        let universe = universe.clone();
+        let canvas_dirty = canvas_dirty.clone();
+        let needs_render = needs_render.clone();
+
+        let resize_cb = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+            let density = population_density.get_untracked();
+            let (gw, gh, _, _) = viewport_grid_size(cell_size);
+            universe.borrow_mut().resize_and_redistribute(gw, gh, density);
+            *canvas_dirty.borrow_mut() = true;
+            *needs_render.borrow_mut() = true;
+        }) as Box<dyn FnMut(_)>);
+
+        if let Some(window) = web_sys::window() {
+            let js_fn = resize_cb.as_ref().unchecked_ref::<js_sys::Function>().clone();
+            let _ = window.add_event_listener_with_callback("resize", &js_fn);
+
+            let js_fn_cleanup = js_fn.clone();
+            on_cleanup(move || {
+                if let Some(window) = web_sys::window() {
+                    let _ = window.remove_event_listener_with_callback("resize", &js_fn_cleanup);
+                }
+                drop(resize_cb);
+            });
+        }
+    }
+
+    // ── Mouse handler ──
+    {
+        let universe = universe.clone();
+        let needs_render = needs_render.clone();
+
+        let mouse_cb = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+            let mouse_x = event.client_x() as f64;
+            let mouse_y = event.client_y() as f64;
+            let col = (mouse_x / cell_size) as usize;
+            let row = (mouse_y / cell_size) as usize;
+
+            let mut uni = universe.borrow_mut();
+            if row < uni.height() && col < uni.width() {
+                // Only set needs_render when cell was dead (avoid unnecessary renders)
+                if !uni.get_cell(row, col).is_alive() {
+                    uni.set_cell(row, col, Cell::alive());
+                    *needs_render.borrow_mut() = true;
+                }
+            }
+        }) as Box<dyn FnMut(_)>);
+
         if let Some(document) = web_sys::window().and_then(|w| w.document()) {
-            let mouse_handler = wasm_bindgen::closure::Closure::wrap(Box::new({
-                let universe = universe.clone();
-                move |event: web_sys::MouseEvent| {
-                    if let Some(current_universe) = universe.get_untracked() {
-                        let mouse_x = event.client_x() as f64;
-                        let mouse_y = event.client_y() as f64;
+            let js_fn = mouse_cb.as_ref().unchecked_ref::<js_sys::Function>().clone();
+            let _ = document.add_event_listener_with_callback("mousemove", &js_fn);
 
-                        // Convert mouse position to grid coordinates
-                        let col = (mouse_x / cell_size) as usize;
-                        let row = (mouse_y / cell_size) as usize;
-
-                        if row < current_universe.height() && col < current_universe.width() {
-                            universe.update(|u| {
-                                if let Some(ref mut universe) = u {
-                                    universe.set_cell(row, col, Cell::alive());
-                                }
-                            });
-                        }
-                    }
+            let js_fn_cleanup = js_fn.clone();
+            on_cleanup(move || {
+                if let Some(document) = web_sys::window().and_then(|w| w.document()) {
+                    let _ = document.remove_event_listener_with_callback("mousemove", &js_fn_cleanup);
                 }
-            })
-                as Box<dyn FnMut(_)>);
-
-            let _ = document.add_event_listener_with_callback(
-                "mousemove",
-                mouse_handler.as_ref().unchecked_ref(),
-            );
-            mouse_handler.forget();
+                drop(mouse_cb);
+            });
         }
-    });
+    }
+
+    // ── MutationObserver for theme detection ──
+    {
+        let renderer = renderer.clone();
+        let needs_render = needs_render.clone();
+
+        let mutation_cb = Closure::wrap(Box::new(move |_mutations: js_sys::Array, _observer: MutationObserver| {
+            let dark = is_dark_mode();
+            renderer.borrow_mut().update_theme(dark);
+            *needs_render.borrow_mut() = true;
+        }) as Box<dyn FnMut(js_sys::Array, MutationObserver)>);
+
+        if let Some(doc_el) = web_sys::window()
+            .and_then(|w| w.document())
+            .and_then(|d| d.document_element())
+        {
+            if let Ok(observer) = MutationObserver::new(mutation_cb.as_ref().unchecked_ref()) {
+                let opts = MutationObserverInit::new();
+                opts.set_attributes(true);
+                opts.set_attribute_filter(&js_sys::Array::of1(&JsValue::from_str("class")));
+                let _ = observer.observe_with_options(&doc_el, &opts);
+
+                on_cleanup(move || {
+                    observer.disconnect();
+                    drop(mutation_cb);
+                });
+            }
+        }
+    }
+
+    // ── Population density watcher ──
+    {
+        let universe = universe.clone();
+        let needs_render = needs_render.clone();
+
+        create_effect(move |previous_density: Option<f64>| {
+            let current_density = population_density.get();
+            if let Some(prev) = previous_density {
+                if (current_density - prev).abs() > f64::EPSILON {
+                    let mut uni = universe.borrow_mut();
+                    uni.clear();
+                    uni.randomize(current_density);
+                    uni.add_glider(5, 5);
+                    uni.add_blinker(10, 8);
+                    *needs_render.borrow_mut() = true;
+                }
+            }
+            current_density
+        });
+    }
 
     view! {
         <div class="fixed inset-0 w-screen h-screen z-0 pointer-events-none">
@@ -685,12 +537,28 @@ pub fn Life(animation_speed: RwSignal<u64>, population_density: RwSignal<f64>) -
     }
 }
 
-// SSR version (no-op)
+#[cfg(feature = "hydrate")]
+fn viewport_grid_size(cell_size: f64) -> (usize, usize, u32, u32) {
+    if let Some(window) = web_sys::window() {
+        let width = window.inner_width().unwrap().as_f64().unwrap();
+        let height = window.inner_height().unwrap().as_f64().unwrap();
+        let grid_width = (width / cell_size).ceil() as usize;
+        let grid_height = (height / cell_size).ceil() as usize;
+        let canvas_width = width as u32;
+        let canvas_height = height as u32;
+        (grid_width, grid_height, canvas_width, canvas_height)
+    } else {
+        (100, 60, 1200, 720)
+    }
+}
+
+// ─── SSR version (no-op) ────────────────────────────────────────────────────
+
 #[cfg(not(feature = "hydrate"))]
 #[component]
 pub fn Life(animation_speed: RwSignal<u64>, population_density: RwSignal<f64>) -> impl IntoView {
-    let _ = animation_speed; // Suppress unused warning
-    let _ = population_density; // Suppress unused warning
+    let _ = animation_speed;
+    let _ = population_density;
     view! {
         <div class="fixed inset-0 w-screen h-screen z-0 pointer-events-none">
             <canvas
