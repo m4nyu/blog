@@ -50,3 +50,10 @@ build/
 /target
 .shuttle*
 Secrets*.toml
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!terraform.tfvars.example

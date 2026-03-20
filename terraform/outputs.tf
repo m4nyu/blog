@@ -17,3 +17,13 @@ output "ssh_command" {
   description = "SSH command to connect to the VPS"
   value       = "ssh ubuntu@${ovh_cloud_project_instance.blog.addresses[0].ip}"
 }
+
+output "cloudflare_enabled" {
+  description = "Whether Cloudflare DNS/proxy is active"
+  value       = local.use_cloudflare
+}
+
+output "cloudflare_dns_record" {
+  description = "Cloudflare DNS record ID"
+  value       = local.use_cloudflare ? cloudflare_record.blog_a[0].id : "not configured"
+}
