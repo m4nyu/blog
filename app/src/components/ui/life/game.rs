@@ -262,6 +262,185 @@ impl Universe {
     }
 }
 
+// ─── Tests ──────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::cell::Cell;
+
+    #[test]
+    fn empty_universe_stays_empty() {
+        let mut u = Universe::new(5, 5);
+        assert_eq!(u.count_living_cells(), 0);
+        u.tick();
+        assert_eq!(u.count_living_cells(), 0);
+    }
+
+    #[test]
+    fn single_cell_dies() {
+        let mut u = Universe::new(5, 5);
+        u.set_cell(2, 2, Cell::alive());
+        assert_eq!(u.count_living_cells(), 1);
+        u.tick();
+        assert_eq!(u.count_living_cells(), 0);
+    }
+
+    #[test]
+    fn block_is_still_life() {
+        let mut u = Universe::new(6, 6);
+        u.set_cell(2, 2, Cell::alive());
+        u.set_cell(2, 3, Cell::alive());
+        u.set_cell(3, 2, Cell::alive());
+        u.set_cell(3, 3, Cell::alive());
+
+        let before = u.count_living_cells();
+        u.tick();
+        assert_eq!(u.count_living_cells(), before);
+        assert!(u.get_cell(2, 2).is_alive());
+        assert!(u.get_cell(2, 3).is_alive());
+        assert!(u.get_cell(3, 2).is_alive());
+        assert!(u.get_cell(3, 3).is_alive());
+    }
+
+    #[test]
+    fn blinker_oscillates() {
+        let mut u = Universe::new(5, 5);
+        // Horizontal blinker
+        u.set_cell(2, 1, Cell::alive());
+        u.set_cell(2, 2, Cell::alive());
+        u.set_cell(2, 3, Cell::alive());
+
+        u.tick();
+        // Should become vertical
+        assert!(u.get_cell(1, 2).is_alive());
+        assert!(u.get_cell(2, 2).is_alive());
+        assert!(u.get_cell(3, 2).is_alive());
+        assert!(!u.get_cell(2, 1).is_alive());
+        assert!(!u.get_cell(2, 3).is_alive());
+
+        u.tick();
+        // Should be horizontal again
+        assert!(u.get_cell(2, 1).is_alive());
+        assert!(u.get_cell(2, 2).is_alive());
+        assert!(u.get_cell(2, 3).is_alive());
+    }
+
+    #[test]
+    fn blinker_period_two() {
+        let mut u = Universe::new(5, 5);
+        u.set_cell(2, 1, Cell::alive());
+        u.set_cell(2, 2, Cell::alive());
+        u.set_cell(2, 3, Cell::alive());
+
+        let mut snapshot = u.clone();
+        u.tick();
+        assert!(!u.is_stable(&snapshot));
+
+        let _after_one = u.clone();
+        u.tick();
+        // After 2 ticks, back to the original state (period-2 oscillator)
+        let mut original = Universe::new(5, 5);
+        original.set_cell(2, 1, Cell::alive());
+        original.set_cell(2, 2, Cell::alive());
+        original.set_cell(2, 3, Cell::alive());
+        assert!(u.is_stable(&original));
+    }
+
+    #[test]
+    fn glider_moves() {
+        let mut u = Universe::new(10, 10);
+        u.add_glider(0, 0);
+        let initial_alive = u.count_living_cells();
+        assert_eq!(initial_alive, 5);
+
+        // After 4 ticks, a glider shifts 1 cell diagonally
+        for _ in 0..4 {
+            u.tick();
+        }
+        assert_eq!(u.count_living_cells(), 5);
+    }
+
+    #[test]
+    fn randomize_respects_density() {
+        let mut u = Universe::new(100, 100);
+        u.randomize(0.0);
+        assert_eq!(u.count_living_cells(), 0);
+
+        u.randomize(1.0);
+        assert_eq!(u.count_living_cells(), 10000);
+    }
+
+    #[test]
+    fn resize_and_redistribute_changes_dimensions() {
+        let mut u = Universe::new(10, 10);
+        assert_eq!(u.width(), 10);
+        assert_eq!(u.height(), 10);
+
+        u.resize_and_redistribute(20, 15, 0.1);
+        assert_eq!(u.width(), 20);
+        assert_eq!(u.height(), 15);
+    }
+
+    #[test]
+    fn clear_kills_all() {
+        let mut u = Universe::new(10, 10);
+        u.randomize(0.5);
+        assert!(u.count_living_cells() > 0);
+        u.clear();
+        assert_eq!(u.count_living_cells(), 0);
+    }
+
+    #[test]
+    fn out_of_bounds_returns_dead() {
+        let u = Universe::new(5, 5);
+        assert!(!u.get_cell(100, 100).is_alive());
+    }
+
+    #[test]
+    fn toggle_cell_works() {
+        let mut u = Universe::new(5, 5);
+        assert!(!u.get_cell(2, 2).is_alive());
+        u.toggle_cell(2, 2);
+        assert!(u.get_cell(2, 2).is_alive());
+        u.toggle_cell(2, 2);
+        assert!(!u.get_cell(2, 2).is_alive());
+    }
+
+    #[test]
+    fn tick_has_no_unsafe() {
+        // This test exists to document the invariant: if the code compiles,
+        // tick() contains no unsafe blocks. The build would fail with
+        // #![forbid(unsafe_code)] if any existed.
+        let mut u = Universe::new(5, 5);
+        u.randomize(0.3);
+        for _ in 0..100 {
+            u.tick();
+        }
+    }
+
+    #[test]
+    fn set_cells_batch() {
+        let mut u = Universe::new(10, 10);
+        u.set_cells(&[(0, 0), (1, 1), (2, 2)]);
+        assert!(u.get_cell(0, 0).is_alive());
+        assert!(u.get_cell(1, 1).is_alive());
+        assert!(u.get_cell(2, 2).is_alive());
+        assert_eq!(u.count_living_cells(), 3);
+    }
+
+    #[test]
+    fn scratch_buffer_reused_across_ticks() {
+        let mut u = Universe::new(10, 10);
+        u.randomize(0.3);
+        let scratch_ptr = u.scratch.as_ptr();
+        u.tick();
+        // After tick, cells and scratch are swapped, so the old scratch
+        // pointer should now be the cells pointer
+        assert_eq!(u.cells.as_ptr(), scratch_ptr);
+    }
+}
+
 // ─── Hydrate (WASM) Life component ──────────────────────────────────────────
 
 #[cfg(feature = "hydrate")]

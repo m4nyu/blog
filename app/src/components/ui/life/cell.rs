@@ -100,3 +100,53 @@ impl From<Cell> for bool {
         cell.is_alive()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cell_state_repr() {
+        assert_eq!(std::mem::size_of::<CellState>(), 1);
+    }
+
+    #[test]
+    fn default_is_dead() {
+        assert!(!Cell::default().is_alive());
+        assert_eq!(CellState::default(), CellState::Dead);
+    }
+
+    #[test]
+    fn alive_dead_constructors() {
+        assert!(Cell::alive().is_alive());
+        assert!(!Cell::dead().is_alive());
+    }
+
+    #[test]
+    fn toggle() {
+        let mut c = Cell::dead();
+        c.toggle();
+        assert!(c.is_alive());
+        c.toggle();
+        assert!(!c.is_alive());
+    }
+
+    #[test]
+    fn set_state() {
+        let mut c = Cell::dead();
+        c.set_alive();
+        assert!(c.is_alive());
+        c.set_dead();
+        assert!(!c.is_alive());
+    }
+
+    #[test]
+    fn bool_conversions() {
+        assert_eq!(CellState::from(true), CellState::Alive);
+        assert_eq!(CellState::from(false), CellState::Dead);
+        assert!(bool::from(CellState::Alive));
+        assert!(!bool::from(CellState::Dead));
+        assert!(bool::from(Cell::alive()));
+        assert!(!bool::from(Cell::dead()));
+    }
+}
