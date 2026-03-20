@@ -15,4 +15,10 @@ ssh_public_key_path = "~/.ssh/id_rsa.pub"
 
 # Blog configuration
 blog_port = 3000
-domain    = ""  # Set to your domain for HTTPS setup
+domain    = ""  # Set to your domain for Cloudflare + HTTPS
+
+# Cloudflare (optional — leave empty to skip)
+# Get API token from https://dash.cloudflare.com/profile/api-tokens
+# Token needs Zone:Read + DNS:Edit + Zone Settings:Edit permissions
+cloudflare_api_token = ""
+cloudflare_zone_id   = ""  # From Cloudflare dashboard → your domain → Overview
