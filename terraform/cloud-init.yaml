@@ -1,0 +1,95 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose
+  - nginx
+  - certbot
+  - python3-certbot-nginx
+  - fail2ban
+  - ufw
+
+runcmd:
+  # ── Firewall ──
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+
+  # ── Docker ──
+  - systemctl enable docker
+  - systemctl start docker
+  - usermod -aG docker ubuntu
+
+  # ── App directory ──
+  - mkdir -p /opt/blog
+  - chown ubuntu:ubuntu /opt/blog
+
+  # ── Nginx reverse proxy ──
+  - |
+    cat > /etc/nginx/sites-available/blog <<'NGINX'
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            proxy_pass http://127.0.0.1:${blog_port};
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_read_timeout 86400;
+        }
+    }
+    NGINX
+  - ln -sf /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/blog
+  - rm -f /etc/nginx/sites-enabled/default
+  - systemctl restart nginx
+
+  # ── Fail2ban ──
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+
+  # ── Deploy script ──
+  - |
+    cat > /opt/blog/deploy.sh <<'DEPLOY'
+    #!/bin/bash
+    set -euo pipefail
+    cd /opt/blog
+
+    echo "Pulling latest image..."
+    docker pull ghcr.io/m4nyu/blog:latest || {
+        echo "Building from source..."
+        git clone https://github.com/m4nyu/blog.git repo 2>/dev/null || (cd repo && git pull)
+        cd repo
+        docker build -t blog:latest .
+        cd ..
+    }
+
+    echo "Stopping old container..."
+    docker stop blog 2>/dev/null || true
+    docker rm blog 2>/dev/null || true
+
+    echo "Starting new container..."
+    docker run -d \
+        --name blog \
+        --restart unless-stopped \
+        -p ${blog_port}:${blog_port} \
+        -e PORT=${blog_port} \
+        -e LEPTOS_SITE_ADDR="0.0.0.0:${blog_port}" \
+        -e LEPTOS_OUTPUT_NAME=blog \
+        -e LEPTOS_SITE_ROOT=site \
+        -e LEPTOS_SITE_PKG_DIR=pkg \
+        -e RUST_LOG=info \
+        blog:latest
+
+    echo "Deploy complete. Blog running on port ${blog_port}."
+    DEPLOY
+  - chmod +x /opt/blog/deploy.sh
