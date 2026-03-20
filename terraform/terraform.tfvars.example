@@ -1,0 +1,24 @@
+# OVH API credentials — get from https://api.ovh.com/createToken/
+ovh_application_key    = ""
+ovh_application_secret = ""
+ovh_consumer_key       = ""
+ovh_endpoint           = "ovh-eu"
+
+# OVH Public Cloud project ID — visible in OVH control panel
+service_name = ""
+
+# VPS configuration
+vps_region          = "GRA11"
+vps_flavor          = "d2-2"       # 2 vCPU, 2GB RAM, 25GB SSD
+vps_image           = "Ubuntu 24.04"
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+
+# Blog configuration
+blog_port = 3000
+domain    = ""  # Set to your domain for Cloudflare + HTTPS
+
+# Cloudflare (optional — leave empty to skip)
+# Get API token from https://dash.cloudflare.com/profile/api-tokens
+# Token needs Zone:Read + DNS:Edit + Zone Settings:Edit permissions
+cloudflare_api_token = ""
+cloudflare_zone_id   = ""  # From Cloudflare dashboard → your domain → Overview

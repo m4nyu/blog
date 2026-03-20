@@ -4,14 +4,8 @@ pub mod game;
 #[cfg(feature = "hydrate")]
 pub mod canvas;
 
-// Re-export the main types for convenience
 pub use cell::{Cell, CellState};
 pub use game::{Life, Universe};
 
 #[cfg(feature = "hydrate")]
-pub use canvas::{get_theme_colors, AnimationState, CanvasConfig, CanvasRenderer, PatternManager};
-
-#[cfg(not(feature = "hydrate"))]
-pub fn get_theme_colors() -> (String, String) {
-    ("#f9fafb".to_string(), "#374151".to_string())
-}
+pub use canvas::{CanvasConfig, CanvasRenderer};
