@@ -9,6 +9,7 @@ use crate::components::header::Header;
 use crate::components::ui::dialog::Dialog;
 use crate::routes::home::get_posts;
 use crate::routes::home::HomePage;
+use crate::routes::engineer::{EngineerHome, EngineerPost};
 use crate::routes::post::PostPage;
 
 #[component]
@@ -553,6 +554,12 @@ pub fn App() -> impl IntoView {
                         <main class="min-h-screen">
                             <PostPage/>
                         </main>
+                    }/>
+                    <Route path="/engineer" view=move || view! {
+                        <EngineerHome/>
+                    }/>
+                    <Route path="/engineer/:slug" view=move || view! {
+                        <EngineerPost/>
                     }/>
                 </Routes>
             </div>
