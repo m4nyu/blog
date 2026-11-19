@@ -102,12 +102,9 @@ mod client {
 
         fn draw(&mut self) {
             let [r, g, b] = self.rgb;
-            for (px, &alive) in self
-                .pixels
-                .chunks_exact_mut(4)
-                .zip(self.sim.universe.cells())
-            {
-                px.copy_from_slice(&if alive { [r, g, b, 255] } else { [0, 0, 0, 0] });
+            let (pixels, _) = self.pixels.as_chunks_mut::<4>();
+            for (px, &alive) in pixels.iter_mut().zip(self.sim.universe.cells()) {
+                *px = if alive { [r, g, b, 255] } else { [0, 0, 0, 0] };
             }
             let (cols, rows) = (
                 self.sim.universe.width() as u32,
