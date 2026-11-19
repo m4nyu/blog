@@ -37,7 +37,12 @@ async fn main() {
         ),
     ];
 
+    use blog::seo::routes as seo;
     let mut app = Router::new()
+        .route("/sitemap.xml", axum::routing::get(seo::sitemap))
+        .route("/feed.xml", axum::routing::get(seo::feed))
+        .route("/llms.txt", axum::routing::get(seo::llms))
+        .route("/llms-full.txt", axum::routing::get(seo::llms_full))
         .leptos_routes(&options, routes, {
             let options = options.clone();
             move || shell(options.clone())
@@ -50,6 +55,8 @@ async fn main() {
             HeaderValue::from_static(value),
         ));
     }
+    // Brotli or gzip, as the client accepts; shrinks the WASM to about a third.
+    let app = app.layer(tower_http::compression::CompressionLayer::new());
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await

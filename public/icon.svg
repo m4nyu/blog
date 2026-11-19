@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <style>rect{fill:#000}path{fill:#fff}@media (prefers-color-scheme:dark){rect{fill:#fff}path{fill:#000}}</style>
+  <rect width="256" height="256"/>
+  <path transform="rotate(40.5 128 128)" d="M68 192 L68 64 L84 64 L121.6 144 L134.4 144 L172 64 L188 64 L188 192 L172 192 L172 84 L137.6 164 L118.4 164 L84 84 L84 192 Z"/>
+</svg>

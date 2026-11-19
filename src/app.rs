@@ -3,10 +3,10 @@ use crate::ui::{
     home::HomePage,
     not_found::NotFound,
     post::PostPage,
-    settings::SettingsDialog,
+    settings::{SettingsButton, SettingsDialog},
 };
 use leptos::prelude::*;
-use leptos_meta::{provide_meta_context, HashedStylesheet, Link, Meta, MetaTags, Title};
+use leptos_meta::{provide_meta_context, HashedStylesheet, Link, Meta, MetaTags};
 use leptos_router::{
     components::{Route, Router, Routes},
     path, SsrMode,
@@ -55,6 +55,15 @@ impl Theme {
             Self::System => "",
             Self::Light => "light",
             Self::Dark => "dark",
+        }
+    }
+
+    /// Favicon: the adaptive SVG follows the OS; an explicit theme pins a variant.
+    pub fn favicon(self) -> &'static str {
+        match self {
+            Self::System => "/icon.svg",
+            Self::Light => "/icon-light.svg",
+            Self::Dark => "/icon-dark.svg",
         }
     }
 
@@ -187,7 +196,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <AutoReload options=options.clone()/>
-                <HydrationScripts options=options.clone()/>
+                <HydrationScripts options=options.clone() defer=true/>
                 <HashedStylesheet options id="leptos"/>
                 <MetaTags/>
             </head>
@@ -219,13 +228,12 @@ pub fn App() -> impl IntoView {
     }
 
     view! {
-        <Title text="blog"/>
-        <Meta name="description" content="Notes on software, written and served in Rust."/>
         <Meta name="color-scheme" content="light dark"/>
-        <Link rel="icon" type_="image/svg+xml" href="/favicon.svg"/>
+        <Link id="favicon" rel="icon" type_="image/svg+xml" href=settings.theme.get_untracked().favicon()/>
         <Link rel="icon" type_="image/png" sizes="32x32" href="/favicon-32x32.png"/>
         <Link rel="apple-touch-icon" href="/favicon-192x192.png"/>
         <Link rel="manifest" href="/manifest.json"/>
+        <Link rel="alternate" type_="application/atom+xml" title="m4nuel.blog" href="/feed.xml"/>
         <Router>
             <Routes fallback=NotFound>
                 <Route path=path!("/") view=HomePage ssr=SsrMode::Async/>
@@ -234,6 +242,7 @@ pub fn App() -> impl IntoView {
                 <Route path=path!("/engineer/:slug") view=EngineerPost ssr=SsrMode::Async/>
             </Routes>
         </Router>
+        <SettingsButton/>
         <SettingsDialog/>
     }
 }
@@ -247,6 +256,9 @@ fn persist(settings: Settings) {
         let theme = settings.theme.get();
         if let Some(root) = document().document_element() {
             root.set_class_name(theme.class());
+        }
+        if let Some(icon) = document().get_element_by_id("favicon") {
+            let _ = icon.set_attribute("href", theme.favicon());
         }
         if let Ok(doc) = document().dyn_into::<web_sys::HtmlDocument>() {
             let _ = doc.set_cookie(&format!(

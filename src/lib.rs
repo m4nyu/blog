@@ -2,6 +2,7 @@ pub mod api;
 pub mod app;
 pub mod life;
 pub mod model;
+pub mod seo;
 pub mod ui;
 
 #[cfg(feature = "ssr")]
