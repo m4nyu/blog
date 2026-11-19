@@ -1,13 +1,15 @@
 name: CI
 
 # Pull requests into main (drafts included) deploy the staging stack; pushes
-# to main deploy prod. Nothing deploys unless the checks pass.
+# to main (and dispatches on main, see automerge) deploy prod. Nothing deploys
+# unless the checks pass.
 on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -43,8 +45,8 @@ jobs:
 
   image:
     needs: check
-    # Fork PRs get no secrets and must not push images.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    # Fork and Dependabot PRs get no secrets and must not push images.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -61,7 +63,7 @@ jobs:
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -81,16 +83,16 @@ jobs:
   deploy:
     needs: image
     runs-on: ubuntu-24.04
-    environment: ${{ github.event_name == 'push' && 'production' || 'staging' }}
+    environment: ${{ github.event_name != 'pull_request' && 'production' || 'staging' }}
     concurrency:
-      group: deploy-${{ github.event_name == 'push' && 'prod' || 'staging' }}
+      group: deploy-${{ github.event_name != 'pull_request' && 'prod' || 'staging' }}
       cancel-in-progress: false
     permissions:
       contents: read
       packages: read
       pull-requests: write
     env:
-      STACK: ${{ github.event_name == 'push' && 'prod' || 'staging' }}
+      STACK: ${{ github.event_name != 'pull_request' && 'prod' || 'staging' }}
       PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -106,7 +108,7 @@ jobs:
           IMAGE_REF: ${{ needs.image.outputs.ref }}
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACTOR: ${{ github.actor }}
+          ACTOR: ${{ github.repository_owner }}
         run: |
           pulumi stack select --create "$STACK"
           pulumi config set image "$IMAGE_REF"
@@ -146,3 +148,21 @@ jobs:
                 'then http://127.0.0.1:8081',
               ].join('\n'),
             });
+
+  # Dependabot PRs: merge once the checks pass, then run this workflow on main
+  # to deploy. A merge made with GITHUB_TOKEN starts no push workflow;
+  # workflow_dispatch is the one event it may start.
+  automerge:
+    needs: check
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR: ${{ github.event.pull_request.html_url }}
+    steps:
+      - run: gh pr merge "$PR" --squash --delete-branch -R "$GITHUB_REPOSITORY"
+      - run: gh workflow run ci.yml --ref main -R "$GITHUB_REPOSITORY"

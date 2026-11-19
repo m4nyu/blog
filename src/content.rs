@@ -141,6 +141,11 @@ async fn read_source(dir: &Path, slug: &str) -> std::io::Result<Option<String>> 
 
 /// All published posts, newest first. Unparseable files are logged and skipped.
 pub async fn list(dir: &Path) -> std::io::Result<Vec<PostSummary>> {
+    Ok(sources(dir).await?.into_iter().map(|s| s.summary).collect())
+}
+
+/// Parsed sources (summary and Markdown body) of all published posts, newest first.
+pub async fn sources(dir: &Path) -> std::io::Result<Vec<Source>> {
     let mut posts = Vec::new();
     let mut entries = match tokio::fs::read_dir(dir).await {
         Ok(entries) => entries,
@@ -157,12 +162,15 @@ pub async fn list(dir: &Path) -> std::io::Result<Vec<PostSummary>> {
             continue;
         };
         match read_source(dir, slug).await?.map(|text| parse(slug, &text)) {
-            Some(Ok(src)) if !src.draft => posts.push(src.summary),
+            Some(Ok(src)) if !src.draft => posts.push(src),
             Some(Err(e)) => eprintln!("skipping {}: {e}", path.display()),
             _ => {}
         }
     }
-    posts.sort_by(|a, b| b.date.cmp(&a.date).then_with(|| a.slug.cmp(&b.slug)));
+    posts.sort_by(|a, b| {
+        let (a, b) = (&a.summary, &b.summary);
+        b.date.cmp(&a.date).then_with(|| a.slug.cmp(&b.slug))
+    });
     Ok(posts)
 }
 

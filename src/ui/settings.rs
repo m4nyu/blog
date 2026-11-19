@@ -1,6 +1,31 @@
 use crate::app::{Settings, Theme, MAX_DENSITY};
 use leptos::prelude::*;
 
+/// Fixed bottom-right control, styled like the icon buttons on m4nuel.com.
+#[component]
+pub fn SettingsButton() -> impl IntoView {
+    let s = expect_context::<Settings>();
+    view! {
+        <div class="corner">
+            <button
+                type="button"
+                class="icon-button"
+                aria-label="Settings"
+                aria-haspopup="dialog"
+                aria-expanded=move || s.open.get().to_string()
+                on:click=move |_| s.open.update(|open| *open = !*open)
+            >
+                <svg viewBox="0 0 256 256" aria-hidden="true">
+                    <line x1="40" y1="88" x2="216" y2="88"></line>
+                    <circle cx="160" cy="88" r="26"></circle>
+                    <line x1="40" y1="168" x2="216" y2="168"></line>
+                    <circle cx="96" cy="168" r="26"></circle>
+                </svg>
+            </button>
+        </div>
+    }
+}
+
 #[component]
 pub fn SettingsDialog() -> impl IntoView {
     let s = expect_context::<Settings>();

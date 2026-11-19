@@ -4,15 +4,16 @@ use crate::api::{get_post, list_posts};
 use crate::app::set_not_found;
 use crate::life::view::Life;
 use crate::model::Block;
+use crate::seo::{post_url, SITE_URL};
 use leptos::prelude::*;
-use leptos_meta::Title;
+use leptos_meta::Link;
 use leptos_router::hooks::use_params_map;
 
 #[component]
 pub fn EngineerHome() -> impl IntoView {
     let posts = Resource::new(|| (), |_| list_posts());
     view! {
-        <Title text="blog [engineer]"/>
+        <Link rel="canonical" href=format!("{SITE_URL}/")/>
         <Life/>
         <div class="engineer">
             <h1>"blog"</h1>
@@ -71,7 +72,7 @@ pub fn EngineerPost() -> impl IntoView {
                         Ok(Some(post)) => {
                             let s = post.summary;
                             view! {
-                                <Title text=format!("{} [engineer]", s.title)/>
+                                <Link rel="canonical" href=post_url(&s.slug)/>
                                 <article>
                                     <h1>{s.title}</h1>
                                     <pre>"date: " {s.date} "\ntags: " {s.tags.join(", ")}</pre>
@@ -92,7 +93,6 @@ pub fn EngineerPost() -> impl IntoView {
                         Ok(None) => {
                             set_not_found();
                             view! {
-                                <Title text="404 [engineer]"/>
                                 <h1>"404"</h1>
                                 <pre>"post not found"</pre>
                             }

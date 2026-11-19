@@ -1,9 +1,9 @@
 use crate::api::get_post;
 use crate::model::{display_date, Block, Post};
+use crate::seo::{post_url, PageMeta};
 use crate::ui::copy::{copy_text, ShareButton};
 use crate::ui::not_found::NotFound;
 use leptos::prelude::*;
-use leptos_meta::{Meta, Title};
 use leptos_router::hooks::use_params_map;
 
 #[component]
@@ -41,8 +41,12 @@ fn Article(post: Post) -> impl IntoView {
     let Post { summary, blocks } = post;
     let date = display_date(&summary.date);
     view! {
-        <Title text=summary.title.clone()/>
-        <Meta name="description" content=summary.excerpt.clone()/>
+        <PageMeta
+            title=summary.title.clone()
+            description=summary.excerpt.clone()
+            url=post_url(&summary.slug)
+            post=summary.clone()
+        />
         <div class="site">
             <main class="page post">
                 <article>
