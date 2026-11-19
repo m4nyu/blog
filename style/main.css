@@ -97,11 +97,15 @@ body {
   color: #dc2626;
 }
 
+/* Centred on the screen, straight over the Game of Life. */
 .empty {
-  text-align: center;
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
   color: var(--muted-fg);
-  padding: 4rem 0;
-  background: var(--bg);
+  pointer-events: none;
 }
 
 .ghost-button {
