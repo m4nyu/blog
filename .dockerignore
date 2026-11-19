@@ -1,30 +1,8 @@
-# Git
+target
 .git
-.gitignore
-
-# Docker
-Dockerfile
-.dockerignore
-
-# Development
+.github
+.idea
+.claude
 .env
-target/
-node_modules/
-.cache/
-
-# IDE
-.vscode/
-.idea/
+.env.*
 *.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Temporary files
-tmp/
-temp/

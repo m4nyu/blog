@@ -1,0 +1,75 @@
+name: blog-app
+description: >-
+  The blog container on the VPS. prod publishes no port (Cloudflare reaches it
+  through the tunnel in ../edge); staging listens on 127.0.0.1 only.
+runtime: yaml
+
+config:
+  image:
+    type: string
+  publish:
+    type: string
+    default: ""
+  vpsHost:
+    type: string
+    default: 158.69.218.225
+  vpsUser:
+    type: string
+    default: debian
+  vpsHostKey:
+    type: string
+    default: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjpObIuSVN3TC00jbHxg8wnawZpvcSJ70jiZ9aUGjmt
+  sshKey:
+    type: string
+    secret: true
+  registryUser:
+    type: string
+  registryToken:
+    type: string
+    secret: true
+
+variables:
+  name: blog-${pulumi.stack}
+  connection:
+    host: ${vpsHost}
+    user: ${vpsUser}
+    hostKey: ${vpsHostKey}
+    privateKey: ${sshKey}
+
+resources:
+  network:
+    type: command:remote:Command
+    properties:
+      connection: ${connection}
+      create: docker network inspect ${name} >/dev/null 2>&1 || docker network create ${name} >/dev/null
+      delete: docker network rm ${name} >/dev/null 2>&1 || true
+    options:
+      version: 1.3.0
+
+  # Pull first, then swap: downtime is the container restart only. The registry
+  # token arrives on stdin and is dropped from the host right after the pull.
+  container:
+    type: command:remote:Command
+    properties:
+      connection: ${connection}
+      stdin: ${registryToken}
+      create: |
+        set -eu
+        docker login ghcr.io -u ${registryUser} --password-stdin >/dev/null
+        docker pull --quiet ${image}
+        docker logout ghcr.io >/dev/null
+        docker rm -f ${name} >/dev/null 2>&1 || true
+        docker run -d --name ${name} --network ${name} ${publish} \
+          --restart unless-stopped --read-only --cap-drop ALL \
+          --security-opt no-new-privileges --memory 256m --pids-limit 128 \
+          ${image}
+      delete: docker rm -f ${name} >/dev/null 2>&1 || true
+    options:
+      version: 1.3.0
+      dependsOn:
+        - ${network}
+      deleteBeforeReplace: true
+
+outputs:
+  container: ${name}
+  image: ${image}
