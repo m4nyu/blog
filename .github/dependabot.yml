@@ -1,31 +1,44 @@
 version: 2
-# Every dependency, daily, one grouped PR per ecosystem. CI's automerge job
-# merges it once the checks pass; main then deploys.
+# Every dependency, daily. Minor and patch updates come as one PR per
+# ecosystem, majors one PR each, so a breaking major cannot hold back the
+# rest. CI's automerge job merges a PR once its checks pass; main then deploys.
+# Cooldown: a release is proposed only after it has been public for 3 days
+# (majors 7), the window in which compromised versions are usually caught and
+# pulled. Security updates skip the wait.
 updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
       interval: daily
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     groups:
       cargo:
-        patterns: ["*"]
+        update-types: [minor, patch]
     commit-message:
       prefix: "deps"
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: daily
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     groups:
       docker:
-        patterns: ["*"]
+        update-types: [minor, patch]
     commit-message:
       prefix: "deps"
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     groups:
       github-actions:
-        patterns: ["*"]
+        update-types: [minor, patch]
     commit-message:
       prefix: "deps"
