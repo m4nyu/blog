@@ -122,6 +122,7 @@ jobs:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
+          bash ../clear-dns.sh m4nuel.blog
           pulumi stack select --create prod
           printf '%s' "$SSH_KEY" | pulumi config set --secret sshKey
           pulumi up --yes --diff --suppress-progress
