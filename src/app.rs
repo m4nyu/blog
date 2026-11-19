@@ -6,7 +6,7 @@ use crate::ui::{
     settings::{SettingsButton, SettingsDialog},
 };
 use leptos::prelude::*;
-use leptos_meta::{provide_meta_context, HashedStylesheet, Link, Meta, MetaTags};
+use leptos_meta::{provide_meta_context, HashedStylesheet, Link, Meta, MetaTags, Title};
 use leptos_router::{
     components::{Route, Router, Routes},
     path, SsrMode,
@@ -228,6 +228,8 @@ pub fn App() -> impl IntoView {
     }
 
     view! {
+        // Tab title on every page of every site: the M favicon, then "4nuel".
+        <Title text="4nuel"/>
         <Meta name="color-scheme" content="light dark"/>
         <Link id="favicon" rel="icon" type_="image/svg+xml" href=settings.theme.get_untracked().favicon()/>
         <Link rel="icon" type_="image/png" sizes="32x32" href="/favicon-32x32.png"/>

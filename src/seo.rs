@@ -5,7 +5,7 @@
 use crate::model::PostSummary;
 use leptos::prelude::*;
 use leptos::serde_json;
-use leptos_meta::{Link, Meta, Script, Title};
+use leptos_meta::{Link, Meta, Script};
 
 pub const SITE_URL: &str = "https://m4nuel.blog";
 pub const SITE_NAME: &str = "m4nuel.blog";
@@ -73,7 +73,6 @@ pub fn PageMeta(
     let tags = post.map(|p| p.tags).unwrap_or_default();
 
     view! {
-        <Title text=title.clone()/>
         <Meta name="description" content=description.clone()/>
         <Link rel="canonical" href=url.clone()/>
         <Meta property="og:type" content=kind/>
@@ -113,10 +112,10 @@ pub mod routes {
             .replace('\'', "&apos;")
     }
 
-    async fn published() -> Result<Vec<Source>, Response> {
+    async fn published() -> Result<Vec<Source>, StatusCode> {
         sources(&posts_dir()).await.map_err(|e| {
             eprintln!("seo: reading posts: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+            StatusCode::INTERNAL_SERVER_ERROR
         })
     }
 
@@ -124,11 +123,8 @@ pub mod routes {
         ([(header::CONTENT_TYPE, content_type)], body).into_response()
     }
 
-    pub async fn sitemap() -> Response {
-        let posts = match published().await {
-            Ok(p) => p,
-            Err(r) => return r,
-        };
+    pub async fn sitemap() -> Result<Response, StatusCode> {
+        let posts = published().await?;
         let mut xml = String::from(
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n",
         );
@@ -146,14 +142,11 @@ pub mod routes {
             ));
         }
         xml.push_str("</urlset>\n");
-        reply("application/xml; charset=utf-8", xml)
+        Ok(reply("application/xml; charset=utf-8", xml))
     }
 
-    pub async fn feed() -> Response {
-        let posts = match published().await {
-            Ok(p) => p,
-            Err(r) => return r,
-        };
+    pub async fn feed() -> Result<Response, StatusCode> {
+        let posts = published().await?;
         let updated = posts
             .first()
             .map_or("1970-01-01".to_string(), |p| p.summary.date.clone());
@@ -178,7 +171,7 @@ pub mod routes {
             ));
         }
         xml.push_str("</feed>\n");
-        reply("application/atom+xml; charset=utf-8", xml)
+        Ok(reply("application/atom+xml; charset=utf-8", xml))
     }
 
     fn llms_index(posts: &[Source]) -> String {
@@ -202,18 +195,15 @@ pub mod routes {
         out
     }
 
-    pub async fn llms() -> Response {
-        match published().await {
-            Ok(posts) => reply("text/plain; charset=utf-8", llms_index(&posts)),
-            Err(r) => r,
-        }
+    pub async fn llms() -> Result<Response, StatusCode> {
+        Ok(reply(
+            "text/plain; charset=utf-8",
+            llms_index(&published().await?),
+        ))
     }
 
-    pub async fn llms_full() -> Response {
-        let posts = match published().await {
-            Ok(p) => p,
-            Err(r) => return r,
-        };
+    pub async fn llms_full() -> Result<Response, StatusCode> {
+        let posts = published().await?;
         let mut out = format!("# {SITE_NAME}\n\n> {DESCRIPTION}\n");
         for p in &posts {
             let s = &p.summary;
@@ -226,7 +216,7 @@ pub mod routes {
                 p.body.trim()
             ));
         }
-        reply("text/plain; charset=utf-8", out)
+        Ok(reply("text/plain; charset=utf-8", out))
     }
 
     #[cfg(test)]
