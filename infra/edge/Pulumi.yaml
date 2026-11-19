@@ -41,15 +41,17 @@ variables:
           match: all
       options:
         version: 6.24.0
+  # Secret in the provider schema; wrapped as well so `return:` cannot drop it.
   token:
-    fn::invoke:
-      function: cloudflare:getZeroTrustTunnelCloudflaredToken
-      arguments:
-        accountId: ${zone.account.id}
-        tunnelId: ${tunnel.id}
-      options:
-        version: 6.24.0
-      return: token
+    fn::secret:
+      fn::invoke:
+        function: cloudflare:getZeroTrustTunnelCloudflaredToken
+        arguments:
+          accountId: ${zone.account.id}
+          tunnelId: ${tunnel.id}
+        options:
+          version: 6.24.0
+        return: token
 
 resources:
   tunnel:
