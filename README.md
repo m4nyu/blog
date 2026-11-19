@@ -1,106 +1,67 @@
-<div align="center">
+# blog
 
-<pre style="background: transparent;">
-██████╗ ██╗      ██████╗  ██████╗ 
-██╔══██╗██║     ██╔═══██╗██╔════╝ 
-██████╔╝██║     ██║   ██║██║  ███╗
-██╔══██╗██║     ██║   ██║██║   ██║
-██████╔╝███████╗╚██████╔╝╚██████╔╝
-╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ 
-</pre>
-[![GitHub](https://img.shields.io/badge/GitHub-m4nyu-181717?style=flat&logo=github)](https://github.com/m4nyu)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Manuel%20Szedlak-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/manuel-szedlak)
-[![X](https://img.shields.io/badge/X-ManuelSzedlak-1DA1F2?style=flat&logo=x)](https://x.com/ManuelSzedlak)
+Markdown blog in Rust. Leptos renders every page on the server and hydrates it
+in the browser as WASM; Conway's Game of Life runs in the background canvas.
 
-![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
-![Leptos](https://img.shields.io/badge/Leptos-0.5.7-EF3939?style=flat&logo=rust&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
-![Actix Web](https://img.shields.io/badge/Actix%20Web-4.8-000000?style=flat&logo=rust&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat)
+- Rust only: no JavaScript sources, no Node toolchain. The only JS shipped is the
+  loader `wasm-bindgen` generates.
+- 100% safe Rust in this crate, read-only server, strict CSP. See [SECURITY.md](.github/SECURITY.md).
 
-</div>
-
-## ▲ Installation
+## Run
 
 ```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-cargo install cargo-leptos
+rustup target add wasm32-unknown-unknown
+cargo install --locked cargo-leptos --version 0.3.12
+cargo leptos watch          # http://127.0.0.1:3000, rebuilds on change
 ```
 
-## ▶ Run
+## Check
 
 ```bash
-cargo leptos watch
+cargo fmt --check
+cargo clippy --features ssr --all-targets
+cargo clippy --lib --features hydrate --target wasm32-unknown-unknown
+cargo test --features ssr
 ```
 
-## ▲ Deploy
+## Write a post
 
-### Deploy to Render.com
-
-1. **Create a New Web Service on Render**
-   - Connect GitHub repository
-   - Choose "Docker" as the environment
-
-2. **Configure Build & Deploy Settings**
-   - **Build Command**: (uses Dockerfile automatically)
-   - **Start Command**: `./target/release/tailwind`
-   - **Environment**: `Docker`
-   - **Instance Type**: Free or paid tier as needed
-
-3. **Set Environment Variables** (if needed)
-   ```
-   LEPTOS_SITE_ADDR=0.0.0.0:3000
-   RUST_LOG=info
-   ```
-
-4. **Deploy**
-   - Render will automatically build and deploy the blog
-   - The blog will be available at `https://[app-name].onrender.com`
-
-
-## ■ Adding Posts
-
-Create markdown files in `posts/` directory:
+`posts/<slug>.md`, slug in `[a-z0-9_-]`:
 
 ```markdown
 ---
-title: "Post Title"
-date: 2024-01-15
-excerpt: "Brief description"
-tags: ["rust", "web"]
+title: Game of Life
+date: 2026-11-19
+excerpt: One line for the list and the meta description.
+tags: [rust, wasm]
+draft: false
 ---
-
-# Content here
-
-## Images
-![Alt text](./image.png)
-- Place image files in posts/ alongside the .md file
-- Supports: png, jpg, jpeg, gif, svg, webp
-
-## Videos  
-![Video description](./video.mp4)
-- Use standard image syntax for videos
-- Supports: mp4, webm
-- Auto-renders as video player with controls
-
-## Code Blocks
-```javascript
-console.log("This is executable!");
-// Click 'Run' button to execute
+Markdown body. Images and videos go in `public/assets/` and are referenced
+relatively: ![board](board.png) resolves to /assets/board.png.
 ```
 
-## ◆ Structure
+Raw HTML in posts is shown as text, not rendered.
 
-```
-posts/           # Blog posts and media
-├── post-1.md
-├── post-2.md
-└── image.png
+## Deploy
 
-app/             # Blog application code
-├── src/         # Rust/Leptos source code
-│   └── styles/  # CSS styles (Tailwind + global.css)
-└── public/      # Static assets
+```bash
+docker build -t blog .
+docker run --rm -p 127.0.0.1:3000:3000 --read-only --cap-drop ALL \
+  --security-opt no-new-privileges blog
 ```
 
+| Env | Default | |
+|---|---|---|
+| `LEPTOS_SITE_ADDR` | `0.0.0.0:3000` in the image | listen address |
+| `BLOG_POSTS_DIR` | `/app/posts` in the image | Markdown directory |
+
+## Layout
+
+| Path | |
+|---|---|
+| `src/app.rs` | shell, routes, theme cookie, settings, CSP |
+| `src/api.rs` | the two server functions |
+| `src/content.rs` | front matter, Markdown rendering, URL and slug hardening (server) |
+| `src/life/` | Game of Life engine (pure, tested) and canvas renderer (browser) |
+| `src/ui/` | pages and components |
+| `style/main.css` | the whole stylesheet |
