@@ -154,8 +154,11 @@ mod client {
         window().match_media(query).ok().flatten()
     }
 
-    fn request_frame(cb: &Closure<dyn FnMut(f64)>) {
-        let _ = window().request_animation_frame(cb.as_ref().unchecked_ref());
+    /// Schedules `cb` and returns the request id (0 if the browser refused).
+    fn request_frame(cb: &Closure<dyn FnMut(f64)>) -> i32 {
+        window()
+            .request_animation_frame(cb.as_ref().unchecked_ref())
+            .unwrap_or(0)
     }
 
     pub fn start(canvas: HtmlCanvasElement, settings: Settings) {
@@ -183,25 +186,23 @@ mod client {
         }));
         state.borrow_mut().fit_canvas();
 
-        // Animation loop. `running` stops it; dropping the closure breaks the Rc cycle.
-        let running = Rc::new(Cell::new(true));
+        // Animation loop. `pending` is the scheduled frame: cleanup cancels it
+        // before dropping the closure, so the browser never calls a freed closure.
+        let pending = Rc::new(Cell::new(0));
         let frame: FrameCallback = Rc::new(RefCell::new(None));
         *frame.borrow_mut() = Some(Closure::new({
-            let (state, frame, running) = (state.clone(), frame.clone(), running.clone());
+            let (state, frame, pending) = (state.clone(), frame.clone(), pending.clone());
             move |now: f64| {
-                if !running.get() {
-                    return;
-                }
                 state
                     .borrow_mut()
                     .frame(now, settings.speed.get_untracked());
                 if let Some(cb) = frame.borrow().as_ref() {
-                    request_frame(cb);
+                    pending.set(request_frame(cb));
                 }
             }
         }));
         if let Some(cb) = frame.borrow().as_ref() {
-            request_frame(cb);
+            pending.set(request_frame(cb));
         }
 
         let on_resize = window_event_listener(leptos::ev::resize, {
@@ -251,10 +252,10 @@ mod client {
             }
         });
 
-        let owned = SendWrapper::new((running, frame, scheme, on_scheme));
+        let owned = SendWrapper::new((pending, frame, scheme, on_scheme));
         on_cleanup(move || {
-            let (running, frame, scheme, on_scheme) = owned.take();
-            running.set(false);
+            let (pending, frame, scheme, on_scheme) = owned.take();
+            let _ = window().cancel_animation_frame(pending.get());
             frame.borrow_mut().take();
             if let Some(mq) = scheme {
                 let _ = mq.remove_event_listener_with_callback(

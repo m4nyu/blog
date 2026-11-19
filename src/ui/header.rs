@@ -71,6 +71,8 @@ pub fn Header(query: RwSignal<String>, titles: Vec<String>) -> impl IntoView {
                     node_ref=input
                     type="text"
                     placeholder="Search  (Ctrl K)"
+                    id="search"
+                    name="q"
                     aria-label="Search posts"
                     autocomplete="off"
                     spellcheck="false"

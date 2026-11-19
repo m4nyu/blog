@@ -1,6 +1,6 @@
 # Build with the Rust toolchain only; run as non-root on distroless (no shell,
 # no package manager). Base images are pinned to a release line.
-FROM rust:1.97-slim-trixie AS build
+FROM rust:1.100-slim-trixie AS build
 ARG CARGO_LEPTOS_VERSION=0.3.12
 RUN rustup target add wasm32-unknown-unknown \
  && cargo install --locked cargo-leptos --version "${CARGO_LEPTOS_VERSION}"
