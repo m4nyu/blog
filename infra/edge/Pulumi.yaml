@@ -78,6 +78,30 @@ resources:
     options:
       version: 6.24.0
 
+  # Cutover, runs once when created: a tunnel CNAME cannot coexist with A/AAAA
+  # records or another CNAME of the same name, so those go at the apex and www.
+  # MX/TXT and the tunnel CNAMEs below are never touched. Uses the runner's
+  # CLOUDFLARE_API_TOKEN.
+  clearConflicts:
+    type: command:local:Command
+    properties:
+      environment:
+        DOMAIN: ${domain}
+        ZONE: ${zone.id}
+      create: |
+        set -eu
+        base="https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records"
+        for name in "$DOMAIN" "www.$DOMAIN"; do
+          curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$base?name=$name&per_page=100" \
+            | jq -r '.result[] | select(.type == "A" or .type == "AAAA" or (.type == "CNAME" and (.content | endswith(".cfargotunnel.com") | not))) | .id' \
+            | while read -r id; do
+                curl -fsS -X DELETE -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$base/$id" >/dev/null
+                echo "removed $id"
+              done
+        done
+    options:
+      version: 1.3.0
+
   apex:
     type: cloudflare:DnsRecord
     properties:
@@ -90,6 +114,8 @@ resources:
       comment: Cloudflare Tunnel to ${app}
     options:
       version: 6.24.0
+      dependsOn:
+        - ${clearConflicts}
 
   www:
     type: cloudflare:DnsRecord
@@ -103,6 +129,8 @@ resources:
       comment: Cloudflare Tunnel to ${app}
     options:
       version: 6.24.0
+      dependsOn:
+        - ${clearConflicts}
 
   bots:
     type: cloudflare:Ruleset
