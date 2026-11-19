@@ -1,24 +1,27 @@
 name: CI
 
+# Pull requests into main (drafts included) deploy the staging stack; pushes
+# to main deploy prod. Nothing deploys unless the checks pass.
 on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-  pull_request:
 
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: -D warnings
+  IMAGE: ghcr.io/${{ github.repository }}
+  PULUMI_VERSION: 3.277.0
 
 jobs:
   check:
     runs-on: ubuntu-24.04
+    env:
+      RUSTFLAGS: -D warnings
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,9 +43,106 @@ jobs:
 
   image:
     needs: check
+    # Fork PRs get no secrets and must not push images.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      ref: ${{ steps.ref.outputs.ref }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: docker build --tag blog:ci .
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+      - id: ref
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: echo "ref=${IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-24.04
+    environment: ${{ github.event_name == 'push' && 'production' || 'staging' }}
+    concurrency:
+      group: deploy-${{ github.event_name == 'push' && 'prod' || 'staging' }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: write
+    env:
+      STACK: ${{ github.event_name == 'push' && 'prod' || 'staging' }}
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pulumi/actions@96c7761824268174e0d2a4e8c7d75671eebd24a7 # v7.1.0
+        with:
+          pulumi-version: ${{ env.PULUMI_VERSION }}
+
+      - name: app
+        working-directory: infra/app
+        env:
+          IMAGE_REF: ${{ needs.image.outputs.ref }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          pulumi stack select --create "$STACK"
+          pulumi config set image "$IMAGE_REF"
+          pulumi config set registryUser "$ACTOR"
+          printf '%s' "$REGISTRY_TOKEN" | pulumi config set --secret registryToken
+          printf '%s' "$SSH_KEY" | pulumi config set --secret sshKey
+          pulumi up --yes --diff --suppress-progress
+
+      - name: edge
+        if: env.STACK == 'prod'
+        working-directory: infra/edge
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          pulumi stack select --create prod
+          printf '%s' "$SSH_KEY" | pulumi config set --secret sshKey
+          pulumi up --yes --diff --suppress-progress
+
+      - name: comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REF: ${{ needs.image.outputs.ref }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: [
+                `Staging deployed: \`${process.env.REF}\``,
+                '',
+                'It listens on the VPS loopback only. Open it through SSH:',
+                '```bash',
+                'ssh -N -L 8081:127.0.0.1:8081 debian@158.69.218.225',
+                '```',
+                'then http://127.0.0.1:8081',
+              ].join('\n'),
+            });
